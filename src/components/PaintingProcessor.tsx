@@ -41,7 +41,7 @@ export default function PaintingProcessor({
   const [isExporting, setIsExporting] = useState(false);
   const [isExportingUSDZ, setIsExportingUSDZ] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(true);
-  const [showWall, setShowWall] = useState(true);
+  const [showWall, setShowWall] = useState(false);
   const [isEnhancing, setIsEnhancing] = useState(false);
   const [enhancedTexture, setEnhancedTexture] = useState<THREE.Texture | null>(null);
   const [normalMap, setNormalMap] = useState<THREE.Texture | null>(null);
@@ -263,7 +263,7 @@ export default function PaintingProcessor({
       includeFrame: boolean = true
     ): { canvasMesh: THREE.Mesh; paintingGroup: THREE.Group } => {
       const frameWidth = 0.02; // Frame width in units (2cm)
-      const frameDepth = 0.01; // Frame depth (1cm)
+      const frameDepth = 0.05; // Frame depth (1cm)
       
       // Create canvas geometry with high segment count for displacement support
       // Increased segments (256x256) for better displacement detail and smoother impasto
@@ -296,6 +296,7 @@ export default function PaintingProcessor({
       // Position canvas - if no frame, center it; if frame, position at front
       const canvasMesh = new THREE.Mesh(canvasGeometry, canvasMaterial);
       canvasMesh.position.set(0, 0, includeFrame ? 0.002 : 0); // At front if framed, centered if not
+      canvasMesh.position.z = -0.02;
       
       // Create stretcher bars (wooden frame behind canvas)
       const stretcherMaterial = new THREE.MeshStandardMaterial({
@@ -343,34 +344,42 @@ export default function PaintingProcessor({
       const frameThickness = 0.005; // 0.5cm frame thickness
       const frameOuterWidth = width + frameThickness * 2;
       const frameOuterHeight = height + frameThickness * 2;
+      const frameZOffset = -0.02;
       
       // Top frame piece
       const topFrame = new THREE.Mesh(
-        new THREE.BoxGeometry(frameOuterWidth, frameThickness, frameDepth + 0.002),
+        new THREE.BoxGeometry(frameOuterWidth, frameThickness, frameDepth),
         frameMaterial
       );
-      topFrame.position.set(0, height / 2 + frameThickness / 2, 0);
+      topFrame.position.set(0, height / 2 + frameThickness / 2, frameZOffset);
       
       // Bottom frame piece
       const bottomFrame = new THREE.Mesh(
-        new THREE.BoxGeometry(frameOuterWidth, frameThickness, frameDepth + 0.002),
+        new THREE.BoxGeometry(frameOuterWidth, frameThickness, frameDepth),
         frameMaterial
       );
-      bottomFrame.position.set(0, -height / 2 - frameThickness / 2, 0);
+      bottomFrame.position.set(0, -height / 2 - frameThickness / 2, frameZOffset);
       
       // Left frame piece
       const leftFrame = new THREE.Mesh(
-        new THREE.BoxGeometry(frameThickness, frameOuterHeight, frameDepth + 0.002),
+        new THREE.BoxGeometry(frameThickness, frameOuterHeight, frameDepth),
         frameMaterial
       );
-      leftFrame.position.set(-width / 2 - frameThickness / 2, 0, 0);
+      leftFrame.position.set(-width / 2 - frameThickness / 2, 0, frameZOffset);
       
       // Right frame piece
       const rightFrame = new THREE.Mesh(
-        new THREE.BoxGeometry(frameThickness, frameOuterHeight, frameDepth + 0.002),
+        new THREE.BoxGeometry(frameThickness, frameOuterHeight, frameDepth),
         frameMaterial
       );
-      rightFrame.position.set(width / 2 + frameThickness / 2, 0, 0);
+      rightFrame.position.set(width / 2 + frameThickness / 2, 0, frameZOffset);
+      
+      // Complete back panel covering entire backside
+      const backPanel = new THREE.Mesh(
+        new THREE.BoxGeometry(frameOuterWidth, frameOuterHeight, frameThickness),
+        frameMaterial
+      );
+      backPanel.position.set(0, 0, -frameDepth / 2 - frameThickness / 2 - 0.015);
       
       // Create a group to hold all painting elements
       const paintingGroup = new THREE.Group();
@@ -379,7 +388,8 @@ export default function PaintingProcessor({
       // Store frame elements for toggling
       const frameElements = [
         topBar, bottomBar, leftBar, rightBar,
-        topFrame, bottomFrame, leftFrame, rightFrame
+        topFrame, bottomFrame, leftFrame, rightFrame,
+        backPanel
       ];
       
       // Only add frame elements if includeFrame is true

@@ -91,8 +91,16 @@ export default function PaintingProcessor({
   }, []);
 
   const cloneSceneForExport = useCallback((scene: THREE.Scene, targetMesh: THREE.Mesh) => {
+    const originalMeshes: THREE.Mesh[] = [];
+    scene.traverse((object) => {
+      if (object instanceof THREE.Mesh) {
+        originalMeshes.push(object);
+      }
+    });
+
+    const targetIndex = originalMeshes.indexOf(targetMesh);
     const clonedScene = scene.clone(true);
-    const targetUuid = targetMesh.uuid;
+    const clonedMeshes: THREE.Mesh[] = [];
     let clonedMesh: THREE.Mesh | null = null;
 
     clonedScene.traverse((object) => {
@@ -107,11 +115,13 @@ export default function PaintingProcessor({
             object.material = object.material.clone();
           }
         }
-        if (object.uuid === targetUuid) {
-          clonedMesh = object;
-        }
+        clonedMeshes.push(object);
       }
     });
+
+    if (targetIndex >= 0 && targetIndex < clonedMeshes.length) {
+      clonedMesh = clonedMeshes[targetIndex];
+    }
 
     return { clonedScene, clonedMesh };
   }, []);

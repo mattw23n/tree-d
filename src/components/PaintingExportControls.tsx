@@ -30,7 +30,7 @@ export default function PaintingExportControls({
         disabled={isLoading || isExporting || isExportingUSDZ}
         className="rounded-full border border-[#3b362f] px-6 py-2 text-xs uppercase tracking-[0.3em] text-[#cfc6b7] hover:border-[#c8bfae] hover:text-[#f4efe6] transition disabled:opacity-40"
       >
-        {isExportingUSDZ ? 'Exporting…' : 'Export USDZ'}
+        {isExportingUSDZ ? 'Exporting…' : 'Export USDZ (iOS)'}
       </button>
     </div>
   );

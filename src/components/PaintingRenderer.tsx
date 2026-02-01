@@ -28,6 +28,7 @@ interface PaintingRendererProps {
   dimensions: ParsedDimensions;
   isDarkMode: boolean;
   showFrame: boolean;
+  isEnhancing: boolean;
   isLoading: boolean;
   error: string | null;
   onSceneTargetsChange: (targets: SceneTargets) => void;
@@ -42,6 +43,7 @@ export default function PaintingRenderer({
   dimensions,
   isDarkMode,
   showFrame,
+  isEnhancing,
   isLoading,
   error,
   onSceneTargetsChange,
@@ -459,13 +461,16 @@ export default function PaintingRenderer({
           normalMapRef.current,
           roughnessMapRef.current,
           displacementMapRef.current,
-          showFrame
+          true
         );
 
         scene.add(paintingGroup);
         meshRef.current = canvasMesh;
         paintingGroupRef.current = paintingGroup;
         frameElementsRef.current = frameElements;
+        frameElementsRef.current.forEach((element) => {
+          element.visible = showFrame;
+        });
         onSceneTargetsChange({ scene, mesh: canvasMesh });
 
         const box = new THREE.Box3().setFromObject(paintingGroup);
@@ -509,13 +514,16 @@ export default function PaintingRenderer({
               normalMapRef.current,
               roughnessMapRef.current,
               displacementMapRef.current,
-              showFrame
+              true
             );
 
             scene.add(paintingGroup);
             meshRef.current = canvasMesh;
             paintingGroupRef.current = paintingGroup;
             frameElementsRef.current = frameElements;
+            frameElementsRef.current.forEach((element) => {
+              element.visible = showFrame;
+            });
             onSceneTargetsChange({ scene, mesh: canvasMesh });
 
             const box = new THREE.Box3().setFromObject(paintingGroup);
@@ -546,13 +554,16 @@ export default function PaintingRenderer({
               normalMapRef.current,
               roughnessMapRef.current,
               displacementMapRef.current,
-              showFrame
+              true
             );
 
             scene.add(paintingGroup);
             meshRef.current = canvasMesh;
             paintingGroupRef.current = paintingGroup;
             frameElementsRef.current = frameElements;
+            frameElementsRef.current.forEach((element) => {
+              element.visible = showFrame;
+            });
             onSceneTargetsChange({ scene, mesh: canvasMesh });
 
             const box = new THREE.Box3().setFromObject(paintingGroup);
@@ -617,7 +628,6 @@ export default function PaintingRenderer({
     imageUrl,
     dimensions,
     isDarkMode,
-    showFrame,
     applyEnhancement,
     onEnhancementStatusChange,
     onError,
@@ -634,31 +644,31 @@ export default function PaintingRenderer({
     if (!paintingGroupRef.current || frameElementsRef.current.length === 0) return;
 
     frameElementsRef.current.forEach((frameElement) => {
-      if (showFrame) {
-        if (!paintingGroupRef.current!.children.includes(frameElement)) {
-          paintingGroupRef.current!.add(frameElement);
-        }
-      } else {
-        if (paintingGroupRef.current!.children.includes(frameElement)) {
-          paintingGroupRef.current!.remove(frameElement);
-        }
-      }
+      frameElement.visible = showFrame;
     });
   }, [showFrame]);
 
   return (
-    <div className="relative w-full h-[600px] border border-gray-300 rounded-lg overflow-hidden bg-gray-100">
-      {isLoading && (
-        <div className="absolute inset-0 flex items-center justify-center z-10">
-          <div className="text-gray-600">Loading 3D model...</div>
+    <div className="relative w-full h-[600px] overflow-hidden rounded-2xl border border-[#2a2722] bg-[#0f0f0d]">
+      {(isLoading || isEnhancing) && (
+        <div className="absolute inset-0 flex items-center justify-center z-10 bg-[#0f0f0d]/90">
+          <div className="flex flex-col items-center gap-3 text-[#cfc6b7]">
+            <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#c8bfae] border-t-transparent" />
+            <span className="text-xs uppercase tracking-[0.3em]">
+              {isEnhancing ? 'Enhancing surface' : 'Loading relief'}
+            </span>
+          </div>
         </div>
       )}
       {error && (
-        <div className="absolute top-4 left-4 bg-yellow-100 border border-yellow-400 text-yellow-800 px-4 py-2 rounded z-10">
+        <div className="absolute top-4 left-4 rounded-xl border border-[#4a2f2a] bg-[#1a1311] px-4 py-2 text-xs text-[#f0b9ad] z-10">
           {error}
         </div>
       )}
-      <canvas ref={canvasRef} className="w-full h-full" />
+      <canvas
+        ref={canvasRef}
+        className={`w-full h-full ${isEnhancing ? 'opacity-0' : 'opacity-100'}`}
+      />
     </div>
   );
 }

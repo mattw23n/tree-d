@@ -203,6 +203,7 @@ export default function PaintingProcessor({
         dimensions={dimensions}
         isDarkMode={isDarkMode}
         showFrame={showFrame}
+        isEnhancing={isEnhancing}
         isLoading={isLoading}
         error={error}
         onSceneTargetsChange={handleSceneTargetsChange}

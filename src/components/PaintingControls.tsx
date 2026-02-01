@@ -16,26 +16,26 @@ export default function PaintingControls({
   onToggleFrame,
 }: PaintingControlsProps) {
   return (
-    <div className="flex flex-wrap items-center gap-3">
+    <div className="flex flex-wrap justify-center items-center gap-3">
       <button
         onClick={onToggleDarkMode}
         className="rounded-full border border-[#3b362f] px-5 py-2 text-xs uppercase tracking-[0.3em] text-[#cfc6b7] hover:border-[#c8bfae] hover:text-[#f4efe6] transition"
       >
-        {isDarkMode ? 'Gallery Night' : 'Daylight'}
+        {isDarkMode ? 'Dark Mode' : 'Light Mode'}
       </button>
 
-      {isEnhancing && (
+      {/* {isEnhancing && (
         <div className="rounded-full border border-[#2a2722] bg-[#171511] px-5 py-2 text-xs uppercase tracking-[0.3em] text-[#b9b1a4]">
           Enhancing
         </div>
-      )}
+      )} */}
 
-      <button
+      {/* <button
         onClick={onToggleFrame}
         className="rounded-full border border-[#3b362f] px-5 py-2 text-xs uppercase tracking-[0.3em] text-[#cfc6b7] hover:border-[#c8bfae] hover:text-[#f4efe6] transition"
       >
         {showFrame ? 'Frame On' : 'Frame Off'}
-      </button>
+      </button> */}
     </div>
   );
 }

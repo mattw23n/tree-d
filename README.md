@@ -1,6 +1,6 @@
-# API-to-3D Pipeline
+# Tree-D Studio
 
-A web application that converts 2D painting data from the Met Museum API into 1:1 scale 3D GLB models, solving the **Scalar Gap** pain point identified in art collection research.
+A web application that converts 2D paintings into depth-aware 3D reliefs using AI-enhanced normals, displacement, and roughness. It supports the Met Museum API, interactive 3D viewing, and USDZ/GLTF export for AR placement.
 
 ## Problem Statement
 
@@ -8,11 +8,13 @@ The "Scalar Gap" refers to the challenge collectors face when viewing artwork on
 
 ## Features
 
-- **Met Museum API Integration**: Fetches artwork data directly from the Met Museum Collection API
-- **Intelligent Dimension Parsing**: Uses regex to extract centimeter values from Met's dimension strings (e.g., "29 1/8 x 36 1/4 in. (73.7 x 92.1 cm)")
-- **Accurate 3D Scaling**: Converts real-world dimensions to Three.js units (100cm = 1 unit) for precise scaling
-- **GLB Export**: Allows users to export 3D models as GLB files for use in AR/VR environments
-- **Real-time Preview**: Interactive 3D preview with proper lighting and camera controls
+- **Landing, Search, View, Demo pages** with a museum-style interface
+- **Met Museum API Integration** for curated public-domain artworks
+- **Custom image uploads** with local-only processing
+- **AI Normal Map Generation** (Marigold) with procedural fallbacks
+- **Displacement & Roughness Maps** for tactile relief and material response
+- **Accurate 3D Scaling**: 100cm in real life = 1 unit in Three.js
+- **GLTF + USDZ Export** for AR/VR previewing
 
 ## Tech Stack
 
@@ -50,10 +52,10 @@ npm run dev
 
 ## Usage
 
-1. Enter a Met Museum Object ID (find IDs at [metmuseum.org/art/collection](https://www.metmuseum.org/art/collection))
-2. Click "Generate & Preview 3D"
-3. View the 3D model with accurate real-world scaling
-4. Export as GLB for use in AR/VR applications
+1. **Landing**: Learn the pipeline and view the featured 3D relief.
+2. **Search**: Find public-domain artworks from the Met collection.
+3. **View**: Inspect a single artwork in the 3D viewer.
+4. **Demo**: Enter a Met Object ID or upload your own image, then export USDZ/GLTF.
 
 ## How It Works
 
@@ -69,29 +71,38 @@ The `dimensionParser.ts` utility extracts centimeter values from Met API dimensi
 The parser converts centimeter values to Three.js units using the standard metric conversion:
 - **100cm in real life = 1 unit in Three.js**
 
-This ensures that when the GLB model is imported into AR/VR environments, it will appear at the correct physical size.
+This ensures that when the GLTF model is imported into AR/VR environments, it will appear at the correct physical size.
 
 ### 3D Generation
 
-The `PaintingProcessor` component:
-- Creates a `THREE.BoxGeometry` with parsed width, height, and depth (default 0.03 units for canvas thickness)
-- Loads the primary image as a `MeshStandardMaterial` texture
-- Uses `THREE.GLTFExporter` to export the mesh as a `.glb` file
+The `PaintingProcessor` pipeline:
+- Builds a high-segment plane for displacement detail
+- Applies normal, roughness, and displacement maps
+- Uses gallery lighting and orbit controls
+- Exports GLTF or USDZ with baked relief
 
 ## Project Structure
 
 ```
 src/
 ├── app/
-│   ├── layout.tsx          # Root layout
-│   ├── page.tsx            # Main landing page
-│   └── globals.css         # Global styles
+│   ├── layout.tsx              # Root layout
+│   ├── page.tsx                # Landing page
+│   ├── search/page.tsx         # Met search
+│   ├── view/[id]/page.tsx      # Viewer page
+│   └── demo/page.tsx           # Demo + upload
 ├── components/
-│   └── PaintingProcessor.tsx  # Three.js 3D component
+│   ├── PaintingProcessor.tsx   # Orchestrates viewer + export
+│   ├── PaintingRenderer.tsx    # Three.js rendering + enhancement
+│   ├── PaintingControls.tsx    # UI controls
+│   └── PaintingExportControls.tsx
 ├── lib/
-│   └── metApi.ts           # Met Museum API service
+│   ├── metApi.ts               # Met Museum API
+│   └── aiEnhancement.ts        # AI + procedural map generation
+├── types/
+│   └── model-viewer.d.ts       # Web component types
 └── utils/
-    └── dimensionParser.ts  # Dimension parsing utility
+    └── dimensionParser.ts      # Dimension parsing
 ```
 
 ## Error Handling

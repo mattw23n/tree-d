@@ -177,6 +177,11 @@ export default function PaintingProcessor({
             setIsExporting(false);
           }
         },
+        (exportError) => {
+          console.error('GLTF export error:', exportError);
+          alert('Failed to Export GLTF file');
+          setIsExporting(false);
+        },
         {
           binary: true,
           includeCustomExtensions: false,
@@ -213,13 +218,16 @@ export default function PaintingProcessor({
 
       const exporter = new USDZExporter();
 
-      const arrayBuffer = await exporter.parseAsync(clonedScene, {
+      const exportResult = await exporter.parseAsync(clonedScene, {
         maxTextureSize: 2048,
         quickLookCompatible: true,
         includeAnchoringProperties: true,
       });
 
-      const blob = new Blob([arrayBuffer], { type: 'model/vnd.usdz+zip' });
+      const blobBytes = exportResult instanceof Uint8Array
+        ? new Uint8Array(exportResult)
+        : new Uint8Array(exportResult);
+      const blob = new Blob([blobBytes as unknown as BlobPart], { type: 'model/vnd.usdz+zip' });
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;

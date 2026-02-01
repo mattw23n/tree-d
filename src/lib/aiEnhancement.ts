@@ -71,6 +71,7 @@ export interface EnhancementResult {
   enhancedImageUrl: string;
   normalMapUrl?: string;
   depthMapUrl?: string;
+  message?: string;
 }
 
 /**

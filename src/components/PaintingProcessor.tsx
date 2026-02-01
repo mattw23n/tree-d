@@ -52,6 +52,8 @@ export default function PaintingProcessor({
     aiEnhanced: boolean;
     message?: string;
   }>({ normalMap: false, aiEnhanced: false });
+  const enhancementInFlightRef = useRef(false);
+  const enhancementRunForImageRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (!canvasRef.current) return;
@@ -531,6 +533,11 @@ export default function PaintingProcessor({
     if (!imageUrl) {
       return;
     }
+    if (enhancementInFlightRef.current || enhancementRunForImageRef.current === imageUrl) {
+      return;
+    }
+
+    enhancementInFlightRef.current = true;
 
     setIsEnhancing(true);
     setError(null);
@@ -697,12 +704,22 @@ export default function PaintingProcessor({
         console.log('AI enhancement skipped (API not configured or failed):', aiError instanceof Error ? aiError.message : aiError);
         // Don't show error to user - normal map enhancement is the main feature
       }
+
+      enhancementRunForImageRef.current = imageUrl;
     } catch (error) {
       console.error('Enhancement error:', error);
       setError('Failed to enhance texture. Normal map generation may still work.');
       setIsEnhancing(false);
+      enhancementRunForImageRef.current = null;
+    } finally {
+      enhancementInFlightRef.current = false;
     }
   }, [imageUrl]); // Depend on imageUrl so it re-runs when image changes
+
+  useEffect(() => {
+    enhancementRunForImageRef.current = null;
+    enhancementInFlightRef.current = false;
+  }, [imageUrl]);
 
   // Helper function to bake displacement into geometry (required for GLTF/USDZ export)
   const bakeDisplacementIntoGeometry = (mesh: THREE.Mesh) => {

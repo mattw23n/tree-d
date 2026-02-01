@@ -76,6 +76,14 @@ export default function Home() {
           <p className="text-sm text-gray-500">
             Solving the &quot;Scalar Gap&quot; — bridging the sensory gap between digital images and physical presence
           </p>
+          <div className="mt-4">
+            <a
+              href="/gallery"
+              className="inline-block px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-semibold rounded-lg transition-all transform hover:scale-105 shadow-lg"
+            >
+              🎨 Enter 3D Art Gallery
+            </a>
+          </div>
         </div>
 
         <div className="bg-white rounded-lg shadow-lg p-6 mb-6">

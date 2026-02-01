@@ -90,6 +90,32 @@ export default function PaintingProcessor({
     }
   }, []);
 
+  const cloneSceneForExport = useCallback((scene: THREE.Scene, targetMesh: THREE.Mesh) => {
+    const clonedScene = scene.clone(true);
+    const targetUuid = targetMesh.uuid;
+    let clonedMesh: THREE.Mesh | null = null;
+
+    clonedScene.traverse((object) => {
+      if (object instanceof THREE.Mesh) {
+        if (object.geometry) {
+          object.geometry = object.geometry.clone();
+        }
+        if (object.material) {
+          if (Array.isArray(object.material)) {
+            object.material = object.material.map((material) => material.clone());
+          } else {
+            object.material = object.material.clone();
+          }
+        }
+        if (object.uuid === targetUuid) {
+          clonedMesh = object;
+        }
+      }
+    });
+
+    return { clonedScene, clonedMesh };
+  }, []);
+
   const handleExportGlb = useCallback(async () => {
     if (!sceneRef.current || !meshRef.current) {
       alert('No 3D model to export');
@@ -98,21 +124,23 @@ export default function PaintingProcessor({
 
     setIsExporting(true);
     try {
-      if (meshRef.current.material instanceof THREE.MeshStandardMaterial) {
-        const material = meshRef.current.material;
+      const { clonedScene, clonedMesh } = cloneSceneForExport(sceneRef.current, meshRef.current);
+
+      if (clonedMesh && clonedMesh.material instanceof THREE.MeshStandardMaterial) {
+        const material = clonedMesh.material;
         material.needsUpdate = true;
-        if (meshRef.current.geometry) {
-          meshRef.current.geometry.computeVertexNormals();
+        if (clonedMesh.geometry) {
+          clonedMesh.geometry.computeVertexNormals();
         }
         if (material.displacementMap) {
-          bakeDisplacementIntoGeometry(meshRef.current);
+          bakeDisplacementIntoGeometry(clonedMesh);
         }
       }
 
       const exporter = new GLTFExporter();
 
       exporter.parse(
-        sceneRef.current,
+        clonedScene,
         (result) => {
           if (result instanceof ArrayBuffer) {
             const blob = new Blob([result], { type: 'model/gltf-binary' });
@@ -150,7 +178,7 @@ export default function PaintingProcessor({
       alert('Failed to Export GLTF file');
       setIsExporting(false);
     }
-  }, [bakeDisplacementIntoGeometry, title]);
+  }, [bakeDisplacementIntoGeometry, cloneSceneForExport, title]);
 
   const handleExportUsdz = useCallback(async () => {
     if (!sceneRef.current || !meshRef.current) {
@@ -160,20 +188,22 @@ export default function PaintingProcessor({
 
     setIsExportingUSDZ(true);
     try {
-      if (meshRef.current.material instanceof THREE.MeshStandardMaterial) {
-        const material = meshRef.current.material;
+      const { clonedScene, clonedMesh } = cloneSceneForExport(sceneRef.current, meshRef.current);
+
+      if (clonedMesh && clonedMesh.material instanceof THREE.MeshStandardMaterial) {
+        const material = clonedMesh.material;
         material.needsUpdate = true;
-        if (meshRef.current.geometry) {
-          meshRef.current.geometry.computeVertexNormals();
+        if (clonedMesh.geometry) {
+          clonedMesh.geometry.computeVertexNormals();
         }
         if (material.displacementMap) {
-          bakeDisplacementIntoGeometry(meshRef.current);
+          bakeDisplacementIntoGeometry(clonedMesh);
         }
       }
 
       const exporter = new USDZExporter();
 
-      const arrayBuffer = await exporter.parseAsync(sceneRef.current, {
+      const arrayBuffer = await exporter.parseAsync(clonedScene, {
         maxTextureSize: 2048,
         quickLookCompatible: true,
         includeAnchoringProperties: true,
@@ -194,7 +224,7 @@ export default function PaintingProcessor({
       alert('Failed to export USDZ model. Make sure the scene is properly set up.');
       setIsExportingUSDZ(false);
     }
-  }, [bakeDisplacementIntoGeometry, title]);
+  }, [bakeDisplacementIntoGeometry, cloneSceneForExport, title]);
 
   return (
     <div className="w-full h-full flex flex-col items-center">

@@ -83,7 +83,9 @@ export default function PaintingRenderer({
     displacementMapRef.current = null;
 
     try {
-      const proxyUrl = `/api/proxy-image?url=${encodeURIComponent(imageUrl)}`;
+      const proxyUrl = imageUrl.startsWith('blob:') || imageUrl.startsWith('data:')
+        ? imageUrl
+        : `/api/proxy-image?url=${encodeURIComponent(imageUrl)}`;
       const textureLoader = new THREE.TextureLoader();
 
       let normalMapUrl: string;
@@ -440,7 +442,9 @@ export default function PaintingRenderer({
     };
 
     const textureLoader = new THREE.TextureLoader();
-    const proxyUrl = `/api/proxy-image?url=${encodeURIComponent(imageUrl)}`;
+    const proxyUrl = imageUrl.startsWith('blob:') || imageUrl.startsWith('data:')
+      ? imageUrl
+      : `/api/proxy-image?url=${encodeURIComponent(imageUrl)}`;
     textureLoader.setCrossOrigin('anonymous');
 
     textureLoader.load(

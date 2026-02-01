@@ -19,6 +19,11 @@ export async function generateAINormalMap(
   imageUrl: string,
   model: 'depth-anything-v2' | 'marigold-normals' | 'depthpro' = 'depthpro' // Default to DepthPro (best quality)
 ): Promise<string> {
+  if (imageUrl.startsWith('blob:') || imageUrl.startsWith('data:')) {
+    const fallbackError = new Error('AI_NORMAL_MAP_UNAVAILABLE');
+    (fallbackError as any).isFallback = true;
+    throw fallbackError;
+  }
   try {
     // Use Next.js API route to handle Hugging Face API (keeps API key server-side)
     const response = await fetch('/api/ai-normal-map', {
@@ -33,15 +38,13 @@ export async function generateAINormalMap(
     });
 
     if (!response.ok) {
-      const error = await response.json();
-      // If fallback flag is set, throw a specific error that triggers procedural fallback
-      if (error.fallback) {
-        // Don't log this as an error - it's expected fallback behavior
-        const fallbackError = new Error('AI_NORMAL_MAP_UNAVAILABLE');
-        (fallbackError as any).isFallback = true; // Mark as expected fallback
+      const error = await response.json().catch(() => ({ fallback: true }));
+      const fallbackError = new Error('AI_NORMAL_MAP_UNAVAILABLE');
+      (fallbackError as any).isFallback = true;
+      if (error?.fallback || error?.error?.includes('API key')) {
         throw fallbackError;
       }
-      throw new Error(error.error || 'AI normal map generation failed');
+      throw fallbackError;
     }
 
     const result = await response.json();
@@ -55,13 +58,12 @@ export async function generateAINormalMap(
     
     return result.normalMapUrl;
   } catch (error) {
-    // Only log actual errors, not expected fallbacks
     if (error instanceof Error && (error as any).isFallback) {
-      // This is expected fallback behavior, don't log as error
-      throw error; // Re-throw to trigger fallback in component
+      throw error;
     }
-    console.error('AI normal map generation failed:', error);
-    throw error;
+    const fallbackError = new Error('AI_NORMAL_MAP_UNAVAILABLE');
+    (fallbackError as any).isFallback = true;
+    throw fallbackError;
   }
 }
 
@@ -79,6 +81,12 @@ export async function enhanceImageWithAI(
   imageUrl: string,
   options: AIEnhancementOptions = {}
 ): Promise<EnhancementResult> {
+  if (imageUrl.startsWith('blob:') || imageUrl.startsWith('data:')) {
+    return {
+      enhancedImageUrl: imageUrl,
+      message: 'AI Enhancement: Local uploads use procedural enhancement only.'
+    } as EnhancementResult;
+  }
   const {
     provider = 'replicate', // Default to Replicate for easy access
     enhanceType = 'upscale',
@@ -101,15 +109,20 @@ export async function enhanceImageWithAI(
     });
 
     if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || 'AI enhancement failed');
+      const error = await response.json().catch(() => ({ error: 'AI enhancement failed' }));
+      return {
+        enhancedImageUrl: imageUrl,
+        message: error.error || 'AI Enhancement: Replicate API token not configured. Using original image.'
+      } as EnhancementResult;
     }
 
     const result = await response.json();
     return result;
   } catch (error) {
-    console.error('AI enhancement error:', error);
-    throw error;
+    return {
+      enhancedImageUrl: imageUrl,
+      message: 'AI Enhancement: Replicate API token not configured. Using original image.'
+    } as EnhancementResult;
   }
 }
 

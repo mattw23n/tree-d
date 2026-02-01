@@ -1,8 +1,9 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import * as THREE from 'three';
 import { GLTFExporter } from 'three/examples/jsm/exporters/GLTFExporter.js';
+import { USDZExporter } from 'three/examples/jsm/exporters/USDZExporter.js';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { ParsedDimensions } from '@/utils/dimensionParser';
 import { 
@@ -38,6 +39,7 @@ export default function PaintingProcessor({
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isExporting, setIsExporting] = useState(false);
+  const [isExportingUSDZ, setIsExportingUSDZ] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(true);
   const [showWall, setShowWall] = useState(true);
   const [isEnhancing, setIsEnhancing] = useState(false);
@@ -448,6 +450,12 @@ export default function PaintingProcessor({
         setError(null);
         setEnhancementStatus({ normalMap: false, aiEnhanced: false }); // Reset when new painting loads
         setDisplacementMap(null); // Clear displacement map for new painting
+        
+        // Automatically apply enhancement after painting loads
+        // This will generate normal maps, displacement maps, and roughness maps
+        setTimeout(() => {
+          applyEnhancement();
+        }, 100); // Small delay to ensure painting is fully rendered
       },
       undefined,
       (err) => {
@@ -675,9 +683,10 @@ export default function PaintingProcessor({
     });
   }, [showFrame]);
 
-  const handleAIEnhance = async () => {
+  // Auto-enhance function - runs automatically when painting loads
+  // This generates normal maps, displacement maps, and roughness maps automatically
+  const applyEnhancement = useCallback(async () => {
     if (!imageUrl) {
-      alert('No image to enhance');
       return;
     }
 
@@ -851,6 +860,56 @@ export default function PaintingProcessor({
       setError('Failed to enhance texture. Normal map generation may still work.');
       setIsEnhancing(false);
     }
+  }, [imageUrl]); // Depend on imageUrl so it re-runs when image changes
+
+  // Helper function to bake displacement into geometry (required for GLTF/USDZ export)
+  const bakeDisplacementIntoGeometry = (mesh: THREE.Mesh) => {
+    if (!mesh.geometry || !mesh.material) return;
+    
+    const material = mesh.material as THREE.MeshStandardMaterial;
+    if (!material.displacementMap || !material.displacementScale) return;
+
+    const geometry = mesh.geometry;
+    const positionAttribute = geometry.attributes.position;
+    const displacementMap = material.displacementMap;
+    const displacementScale = material.displacementScale;
+    const displacementBias = material.displacementBias || 0;
+
+    // Create a temporary canvas to read displacement map
+    const canvas = document.createElement('canvas');
+    canvas.width = displacementMap.image.width;
+    canvas.height = displacementMap.image.height;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    ctx.drawImage(displacementMap.image, 0, 0);
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const data = imageData.data;
+
+    // Apply displacement to vertices
+    const positions = positionAttribute.array as Float32Array;
+    const uvs = geometry.attributes.uv;
+    
+    if (uvs) {
+      const uvArray = uvs.array as Float32Array;
+      
+      for (let i = 0; i < positions.length; i += 3) {
+        const u = uvArray[i / 3 * 2];
+        const v = uvArray[i / 3 * 2 + 1];
+        
+        // Sample displacement map
+        const x = Math.floor(u * (canvas.width - 1));
+        const y = Math.floor((1 - v) * (canvas.height - 1)); // Flip V coordinate
+        const idx = (y * canvas.width + x) * 4;
+        const displacement = (data[idx] / 255) * displacementScale + displacementBias;
+        
+        // Apply displacement along normal (Z-axis for plane geometry)
+        positions[i + 2] += displacement; // Z is the normal for a plane
+      }
+      
+      positionAttribute.needsUpdate = true;
+      geometry.computeVertexNormals();
+    }
   };
 
   const handleExport = async () => {
@@ -861,9 +920,27 @@ export default function PaintingProcessor({
 
     setIsExporting(true);
     try {
+      // Ensure all textures are properly set and materials are updated
+      if (meshRef.current && meshRef.current.material instanceof THREE.MeshStandardMaterial) {
+        const material = meshRef.current.material;
+        // Force material update to ensure all textures are ready
+        material.needsUpdate = true;
+        
+        // Ensure geometry normals are computed (important for normal maps)
+        if (meshRef.current.geometry) {
+          meshRef.current.geometry.computeVertexNormals();
+        }
+        
+        // Bake displacement into geometry (GLTF doesn't support displacement maps)
+        // This ensures the 3D relief is preserved in the exported file
+        if (material.displacementMap) {
+          bakeDisplacementIntoGeometry(meshRef.current);
+        }
+      }
+
       const exporter = new GLTFExporter();
       
-      // Export as GLB (binary format)
+      // Export as GLB (binary format) with all textures embedded
       exporter.parse(
         sceneRef.current,
         (result) => {
@@ -893,12 +970,72 @@ export default function PaintingProcessor({
             setIsExporting(false);
           }
         },
-        { binary: true }
+        { 
+          binary: true,
+          // Include all textures and materials
+          includeCustomExtensions: false,
+          // Ensure textures are embedded
+          embedImages: true
+        }
       );
     } catch (err) {
       console.error('Export error:', err);
       alert('Failed to export GLB file');
       setIsExporting(false);
+    }
+  };
+
+  const handleExportUSDZ = async () => {
+    if (!sceneRef.current || !meshRef.current) {
+      alert('No 3D model to export');
+      return;
+    }
+
+    setIsExportingUSDZ(true);
+    try {
+      // Ensure all textures are properly set and materials are updated
+      if (meshRef.current && meshRef.current.material instanceof THREE.MeshStandardMaterial) {
+        const material = meshRef.current.material;
+        // Force material update to ensure all textures are ready
+        material.needsUpdate = true;
+        
+        // Ensure geometry normals are computed (important for normal maps)
+        if (meshRef.current.geometry) {
+          meshRef.current.geometry.computeVertexNormals();
+        }
+        
+        // Bake displacement into geometry (USDZ doesn't support displacement maps)
+        // This ensures the 3D relief is preserved in the exported file
+        if (material.displacementMap) {
+          bakeDisplacementIntoGeometry(meshRef.current);
+        }
+      }
+
+      const exporter = new USDZExporter();
+      
+      // Export as USDZ (Apple AR format)
+      // Note: USDZ supports normal maps and roughness maps, but NOT displacement maps
+      // Displacement maps need to be baked into geometry (which we do via displacementScale)
+      const arrayBuffer = await exporter.parseAsync(sceneRef.current, {
+        maxTextureSize: 2048, // Higher quality for AR
+        quickLookCompatible: true, // Optimize for Apple QuickLook
+        includeAnchoringProperties: true, // Enable AR anchoring
+      });
+      
+      const blob = new Blob([arrayBuffer], { type: 'model/vnd.usdz+zip' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${title.replace(/[^a-z0-9]/gi, '_')}_3d.usdz`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      setIsExportingUSDZ(false);
+    } catch (err) {
+      console.error('USDZ export error:', err);
+      alert('Failed to export USDZ model. Make sure the scene is properly set up.');
+      setIsExportingUSDZ(false);
     }
   };
 
@@ -915,34 +1052,45 @@ export default function PaintingProcessor({
             {error}
           </div>
         )}
-        {enhancementStatus.normalMap && (
-          <div className="absolute top-4 right-4 bg-green-100 border border-green-400 text-green-800 px-4 py-2 rounded z-10 shadow-lg">
-            <div className="flex items-center gap-2">
-              <span>✨</span>
-              <div>
-                <div className="font-semibold">Canvas Texture Applied</div>
-                {enhancementStatus.aiEnhanced && (
-                  <div className="text-xs mt-1">AI Enhanced</div>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
-        {enhancementStatus.message && !enhancementStatus.normalMap && (
-          <div className="absolute top-4 right-4 bg-blue-100 border border-blue-400 text-blue-800 px-4 py-2 rounded z-10 text-sm">
-            {enhancementStatus.message}
-          </div>
-        )}
+        {/* Removed Canvas Texture Applied badge per user request */}
         <canvas ref={canvasRef} className="w-full h-full" />
       </div>
       <div className="mt-4 flex flex-col gap-4">
         <div className="flex gap-4 items-center flex-wrap">
           <button
             onClick={handleExport}
-            disabled={isLoading || isExporting}
-            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+            disabled={isLoading || isExporting || isExportingUSDZ}
+            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
           >
-            {isExporting ? 'Exporting...' : 'Export as GLB'}
+            {isExporting ? (
+              <>
+                <span className="animate-spin">⏳</span>
+                <span>Exporting...</span>
+              </>
+            ) : (
+              <>
+                <span>💾</span>
+                <span>Export GLB</span>
+              </>
+            )}
+          </button>
+          
+          <button
+            onClick={handleExportUSDZ}
+            disabled={isLoading || isExporting || isExportingUSDZ}
+            className="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
+          >
+            {isExportingUSDZ ? (
+              <>
+                <span className="animate-spin">⏳</span>
+                <span>Exporting...</span>
+              </>
+            ) : (
+              <>
+                <span>📱</span>
+                <span>Export USDZ</span>
+              </>
+            )}
           </button>
           
           {/* Dark Mode Toggle */}
@@ -976,24 +1124,13 @@ export default function PaintingProcessor({
             <span>{showWall ? 'Wall View' : 'Gallery View'}</span>
           </button>
           
-          {/* AI Enhancement Button */}
-          <button
-            onClick={handleAIEnhance}
-            disabled={isLoading || isEnhancing}
-            className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
-          >
-            {isEnhancing ? (
-              <>
-                <span className="animate-spin">✨</span>
-                <span>Enhancing...</span>
-              </>
-            ) : (
-              <>
-                <span>✨</span>
-                <span>AI Enhance</span>
-              </>
-            )}
-          </button>
+          {/* Enhancement Status Indicator (auto-enhancement runs automatically) */}
+          {isEnhancing && (
+            <div className="px-4 py-2 bg-purple-600 text-white rounded-lg flex items-center gap-2">
+              <span className="animate-spin">✨</span>
+              <span>Enhancing...</span>
+            </div>
+          )}
           
           {/* Frame Toggle */}
           <button

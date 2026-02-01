@@ -15,7 +15,7 @@ interface EnhancementStatus {
   message?: string;
 }
 
-interface PaintingProcessorVineProps {
+interface PaintingProcessorProps {
   imageUrl: string;
   dimensions: ParsedDimensions;
   title: string;
@@ -25,7 +25,7 @@ export default function PaintingProcessor({
   imageUrl,
   dimensions,
   title,
-}: PaintingProcessorVineProps) {
+}: PaintingProcessorProps) {
   const sceneRef = useRef<THREE.Scene | null>(null);
   const meshRef = useRef<THREE.Mesh | null>(null);
   const [isLoading, setIsLoading] = useState(true);

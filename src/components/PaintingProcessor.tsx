@@ -41,7 +41,6 @@ export default function PaintingProcessor({
   const [isExporting, setIsExporting] = useState(false);
   const [isExportingUSDZ, setIsExportingUSDZ] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(true);
-  const [showWall, setShowWall] = useState(false);
   const [isEnhancing, setIsEnhancing] = useState(false);
   const [enhancedTexture, setEnhancedTexture] = useState<THREE.Texture | null>(null);
   const [normalMap, setNormalMap] = useState<THREE.Texture | null>(null);
@@ -139,117 +138,6 @@ export default function PaintingProcessor({
     if (canvasRef.current) {
       canvasRef.current.addEventListener('mousemove', handleMouseMove);
     }
-
-    // Create wall if showWall is true
-    const createWall = (width: number, height: number) => {
-      if (!showWall) return null;
-      
-      // Wall material - subtle texture
-      const wallMaterial = new THREE.MeshStandardMaterial({
-        color: isDarkMode ? 0x2a2a2a : 0xf5f5f5, // Dark gray or light gray wall
-        roughness: 0.9,
-        metalness: 0.0,
-      });
-      
-      // Create a large wall plane behind the painting
-      const wallSize = Math.max(width, height) * 3; // Wall is 3x larger than painting
-      const wallGeometry = new THREE.PlaneGeometry(wallSize, wallSize);
-      const wall = new THREE.Mesh(wallGeometry, wallMaterial);
-      
-      // Position wall behind the painting - flush against the back of the frame
-      // Frame depth is 0.01, stretcher bars are at -0.005 (center), so wall should be slightly behind
-      wall.position.set(0, 0, -0.006); // Flush against the back of the frame
-      wall.rotation.x = 0;
-      wall.rotation.y = 0;
-      wall.rotation.z = 0;
-      
-      return wall;
-    };
-    const addDimensionLabels = (
-      scene: THREE.Scene,
-      width: number,
-      height: number,
-      depth: number
-    ) => {
-      // Clear existing labels
-      labelRefs.current.forEach((label) => {
-        scene.remove(label);
-        label.element.remove();
-      });
-      labelRefs.current = [];
-
-      // Clear existing lines
-      lineRefs.current.forEach((line) => {
-        scene.remove(line);
-        line.geometry.dispose();
-        if (line.material instanceof THREE.Material) {
-          line.material.dispose();
-        }
-      });
-      lineRefs.current = [];
-
-      // Convert back to cm for display (multiply by 100)
-      const widthCm = width * 100;
-      const heightCm = height * 100;
-      const depthCm = depth * 100;
-
-      // Create label elements
-      const createLabel = (text: string, className: string = '') => {
-        const div = document.createElement('div');
-        div.className = `dimension-label ${className}`;
-        div.textContent = text;
-        div.style.color = '#1f2937';
-        div.style.fontSize = '14px';
-        div.style.fontWeight = '600';
-        div.style.fontFamily = 'monospace';
-        div.style.backgroundColor = 'rgba(255, 255, 255, 0.9)';
-        div.style.padding = '4px 8px';
-        div.style.borderRadius = '4px';
-        div.style.border = '2px solid #3b82f6';
-        div.style.pointerEvents = 'none';
-        div.style.whiteSpace = 'nowrap';
-        return new CSS2DObject(div);
-      };
-
-      // Width label (top edge)
-      const widthLabel = createLabel(`W: ${widthCm.toFixed(1)} cm`, 'width-label');
-      widthLabel.position.set(0, height / 2 + 0.05, 0);
-      scene.add(widthLabel);
-      labelRefs.current.push(widthLabel);
-
-      // Height label (right edge)
-      const heightLabel = createLabel(`H: ${heightCm.toFixed(1)} cm`, 'height-label');
-      heightLabel.position.set(width / 2 + 0.05, 0, 0);
-      scene.add(heightLabel);
-      labelRefs.current.push(heightLabel);
-
-      // Depth label (front edge, bottom)
-      if (depthCm > 0.1) {
-        const depthLabel = createLabel(`D: ${depthCm.toFixed(2)} cm`, 'depth-label');
-        depthLabel.position.set(width / 2 + 0.05, -height / 2 - 0.05, depth / 2);
-        scene.add(depthLabel);
-        labelRefs.current.push(depthLabel);
-      }
-
-      // Add dimension lines (optional visual aid)
-      const lineMaterial = new THREE.LineBasicMaterial({ color: 0x3b82f6, linewidth: 2 });
-      
-      // Width indicator line (top)
-      const widthLineGeometry = new THREE.BufferGeometry().setFromPoints([
-        new THREE.Vector3(-width / 2, height / 2 + 0.02, 0),
-        new THREE.Vector3(width / 2, height / 2 + 0.02, 0),
-      ]);
-      const widthLine = new THREE.Line(widthLineGeometry, lineMaterial);
-      scene.add(widthLine);
-
-      // Height indicator line (right)
-      const heightLineGeometry = new THREE.BufferGeometry().setFromPoints([
-        new THREE.Vector3(width / 2 + 0.02, -height / 2, 0),
-        new THREE.Vector3(width / 2 + 0.02, height / 2, 0),
-      ]);
-      const heightLine = new THREE.Line(heightLineGeometry, lineMaterial);
-      scene.add(heightLine);
-    };
 
     // Helper function to create painting with optional frame
     const createPaintingWithFrame = (
@@ -437,21 +325,12 @@ export default function PaintingProcessor({
         paintingGroupRef.current = paintingGroup;
         frameElementsRef.current = frameElements;
 
-        // Create and add wall if enabled
-        if (showWall) {
-          const wall = createWall(width, height);
-          if (wall) {
-            scene.add(wall);
-            wallRef.current = wall;
-          }
-        }
-
         // Center camera on the painting group
         const box = new THREE.Box3().setFromObject(paintingGroup);
         const center = box.getCenter(new THREE.Vector3());
         const size = box.getSize(new THREE.Vector3());
         const maxDim = Math.max(size.x, size.y, size.z);
-        const distance = showWall ? maxDim * 2.2 : maxDim * 1.8; // Further back if wall is shown
+        const distance = maxDim * 1.8;
         
         camera.position.set(center.x, center.y, distance);
         camera.lookAt(center);
@@ -498,21 +377,13 @@ export default function PaintingProcessor({
             meshRef.current = canvasMesh;
             paintingGroupRef.current = paintingGroup;
             frameElementsRef.current = frameElements;
-            
-            // Create and add wall if enabled
-            if (showWall) {
-              const wall = createWall(width, height);
-              if (wall) {
-                scene.add(wall);
-                wallRef.current = wall;
-              }
-            }
+          
             
             const box = new THREE.Box3().setFromObject(paintingGroup);
             const center = box.getCenter(new THREE.Vector3());
             const size = box.getSize(new THREE.Vector3());
             const maxDim = Math.max(size.x, size.y, size.z);
-            const distance = showWall ? maxDim * 2.2 : maxDim * 1.8;
+            const distance = maxDim * 1.8;
             camera.position.set(center.x, center.y, distance);
             camera.lookAt(center);
             
@@ -544,15 +415,6 @@ export default function PaintingProcessor({
             meshRef.current = canvasMesh;
             paintingGroupRef.current = paintingGroup;
             frameElementsRef.current = frameElements;
-            
-            // Create and add wall if enabled
-            if (showWall) {
-              const wall = createWall(width, height);
-              if (wall) {
-                scene.add(wall);
-                wallRef.current = wall;
-              }
-            }
             
             const box = new THREE.Box3().setFromObject(paintingGroup);
             const center = box.getCenter(new THREE.Vector3());
@@ -633,7 +495,7 @@ export default function PaintingProcessor({
         }
       });
     };
-  }, [imageUrl, dimensions, isDarkMode, showWall, showFrame]);
+  }, [imageUrl, dimensions, isDarkMode, showFrame]);
 
   // Update background and wall when toggles change
   useEffect(() => {
@@ -642,37 +504,7 @@ export default function PaintingProcessor({
     // Update background color
     sceneRef.current.background = new THREE.Color(isDarkMode ? 0x000000 : 0xffffff);
     
-    // Update wall if it exists
-    if (wallRef.current) {
-      const wallMaterial = wallRef.current.material as THREE.MeshStandardMaterial;
-      if (wallMaterial) {
-        wallMaterial.color.setHex(isDarkMode ? 0x2a2a2a : 0xf5f5f5);
-      }
-      
-      // Remove wall if showWall is false
-      if (!showWall && wallRef.current.parent) {
-        wallRef.current.parent.remove(wallRef.current);
-        wallRef.current.geometry.dispose();
-        wallRef.current.material.dispose();
-        wallRef.current = null;
-      }
-    } else if (showWall && meshRef.current) {
-      // Create wall if it doesn't exist and showWall is true
-      const width = dimensions.height;
-      const height = dimensions.width;
-      const wallSize = Math.max(width, height) * 3;
-      const wallGeometry = new THREE.PlaneGeometry(wallSize, wallSize);
-      const wallMaterial = new THREE.MeshStandardMaterial({
-        color: isDarkMode ? 0x2a2a2a : 0xf5f5f5,
-        roughness: 0.9,
-        metalness: 0.0,
-      });
-      const wall = new THREE.Mesh(wallGeometry, wallMaterial);
-      wall.position.set(0, 0, -0.006);
-      sceneRef.current.add(wall);
-      wallRef.current = wall;
-    }
-  }, [isDarkMode, showWall, dimensions]);
+  }, [isDarkMode, dimensions]);
 
   // Update frame visibility when toggle changes
   useEffect(() => {
@@ -1119,19 +951,6 @@ export default function PaintingProcessor({
                 <span>Light Mode</span>
               </>
             )}
-          </button>
-          
-          {/* Wall Toggle */}
-          <button
-            onClick={() => setShowWall(!showWall)}
-            className={`px-4 py-2 rounded-lg transition-colors flex items-center gap-2 ${
-              showWall
-                ? 'bg-gray-800 text-white hover:bg-gray-700'
-                : 'bg-gray-200 text-gray-800 hover:bg-gray-300'
-            }`}
-          >
-            <span>🖼️</span>
-            <span>{showWall ? 'Wall View' : 'Gallery View'}</span>
           </button>
           
           {/* Enhancement Status Indicator (auto-enhancement runs automatically) */}

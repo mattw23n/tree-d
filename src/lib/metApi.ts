@@ -31,7 +31,6 @@ export interface MetArtwork {
   objectBeginDate: number;
   objectEndDate: number;
   medium: string;
-  dimensions: string;
   measurements: Array<{
     elementName: string;
     elementDescription: string;
@@ -115,7 +114,7 @@ export async function fetchMetArtwork(objectId: number): Promise<MetArtwork | nu
 export async function searchMetArtwork(query: string): Promise<number[]> {
   try {
     const response = await fetch(
-      `https://collectionapi.metmuseum.org/public/collection/v1/search?hasImages=true&isPublicDomain=true&q=${encodeURIComponent(query)}`,
+      `https://collectionapi.metmuseum.org/public/collection/v1/search?hasImages=true&isPublicDomain=true&medium=Paintings&q=${encodeURIComponent(query)}`,
       {
         headers: {
           'Accept': 'application/json',

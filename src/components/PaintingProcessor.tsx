@@ -147,7 +147,7 @@ export default function PaintingProcessor({
       );
     } catch (err) {
       console.error('Export error:', err);
-      alert('Failed to export GLB file');
+      alert('Failed to Export GLTF file');
       setIsExporting(false);
     }
   }, [bakeDisplacementIntoGeometry, title]);

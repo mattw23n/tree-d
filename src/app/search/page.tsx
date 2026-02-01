@@ -95,30 +95,54 @@ export default function SearchPage() {
   };
 
   return (
-    <main className="min-h-screen p-8 bg-gradient-to-br from-gray-50 to-gray-100">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">
-            Met Museum Search
-          </h1>
-          <p className="text-lg text-gray-600 mb-4">
-            Search for public domain artwork with available images
-          </p>
-          <Link 
-            href="/"
-            className="text-blue-600 hover:text-blue-800 underline text-sm"
-          >
-            ← Back to Direct ID Entry
-          </Link>
-        </div>
+    <main className="min-h-screen bg-[#0f0f0d] text-[#e8e2d5]">
+      <div className="mx-auto max-w-6xl px-6 py-10 sm:px-8">
+        <header className="flex flex-wrap items-center justify-between gap-4 border-b border-[#2a2722] pb-6">
+          <div className="space-y-1">
+            <p className="text-xs uppercase tracking-[0.3em] text-[#b9b1a4]">Tree-D Studio</p>
+            <h1 className="text-2xl font-serif text-[#f4efe6]">Curatorial Search</h1>
+          </div>
+          <nav className="flex gap-6 text-sm text-[#b9b1a4]">
+            <Link className="hover:text-[#f4efe6] transition" href="/">Landing</Link>
+            <Link className="hover:text-[#f4efe6] transition" href="/demo">Demo</Link>
+          </nav>
+        </header>
 
-        {/* Search Box */}
-        <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-          <div className="flex gap-4 items-end">
+        <section className="mt-12 grid gap-8 lg:grid-cols-[1.1fr_0.9fr]">
+          <div className="space-y-4">
+            <p className="text-xs uppercase tracking-[0.4em] text-[#a79f92]">Metropolitan Museum Archive</p>
+            <h2 className="text-4xl font-serif leading-tight text-[#f7f1e7] sm:text-5xl">
+              Select a painting to convert into relief
+            </h2>
+            <p className="text-lg text-[#cfc6b7] leading-relaxed">
+              Search by artist, title, or medium. We only surface public-domain works with available imagery
+              to preserve the integrity of the collection and deliver accurate depth conversion.
+            </p>
+          </div>
+          <div className="rounded-3xl border border-[#2a2722] bg-gradient-to-b from-[#1a1815] via-[#12110f] to-[#0f0f0d] p-6">
+            <p className="text-xs uppercase tracking-[0.3em] text-[#b9b1a4]">Search Notes</p>
+            <ul className="mt-4 space-y-3 text-sm text-[#cfc6b7]">
+              <li className="flex gap-3">
+                <span className="mt-1 h-2 w-2 rounded-full bg-[#c8bfae]" />
+                Only public-domain works with primary images appear.
+              </li>
+              <li className="flex gap-3">
+                <span className="mt-1 h-2 w-2 rounded-full bg-[#c8bfae]" />
+                We sample the first 50 matches to curate the top 20.
+              </li>
+              <li className="flex gap-3">
+                <span className="mt-1 h-2 w-2 rounded-full bg-[#c8bfae]" />
+                Select any work to open the 3D viewer.
+              </li>
+            </ul>
+          </div>
+        </section>
+
+        <section className="mt-12 rounded-3xl border border-[#2a2722] bg-[#141311] p-6">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
             <div className="flex-1">
-              <label htmlFor="search" className="block text-sm font-medium text-gray-700 mb-2">
-                Search Artwork
+              <label htmlFor="search" className="block text-xs uppercase tracking-[0.3em] text-[#b9b1a4]">
+                Search the archive
               </label>
               <input
                 id="search"
@@ -126,113 +150,91 @@ export default function SearchPage() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onKeyPress={handleKeyPress}
-                placeholder="e.g., Monet, sunflowers, landscape, impressionism..."
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="Monet, sunflowers, portrait, landscape..."
+                className="mt-3 w-full rounded-full border border-[#3b362f] bg-[#0f0f0d] px-5 py-3 text-sm text-[#f4efe6] placeholder:text-[#7c7265] focus:border-[#c8bfae] focus:outline-none"
                 disabled={isSearching}
               />
-              <p className="mt-2 text-xs text-gray-500">
-                Search by artist, title, medium, or keyword. Only public domain works with images will be shown.
+              <p className="mt-3 text-xs text-[#9a9184]">
+                Search by artist, title, medium, or keyword. We only show public-domain works with images.
               </p>
             </div>
             <button
               onClick={handleSearch}
               disabled={isSearching || !searchQuery.trim()}
-              className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors font-medium"
+              className="rounded-full border border-[#c8bfae] px-6 py-3 text-sm text-[#f4efe6] hover:bg-[#c8bfae] hover:text-[#0f0f0d] transition disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-[#f4efe6]"
             >
               {isSearching ? 'Searching...' : 'Search'}
             </button>
           </div>
-        </div>
+        </section>
 
-        {/* Loading State */}
         {isSearching && (
-          <div className="text-center py-12">
-            <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-            <p className="mt-4 text-gray-600">
-              Searching and filtering for public domain artworks with images...
+          <section className="mt-10 rounded-3xl border border-[#2a2722] bg-[#141311] p-8 text-center">
+            <div className="mx-auto h-10 w-10 animate-spin rounded-full border-2 border-[#c8bfae] border-t-transparent" />
+            <p className="mt-4 text-sm text-[#cfc6b7]">
+              Curating public-domain works with available images...
             </p>
             {displayedResults > 0 && (
-              <p className="mt-2 text-sm text-gray-500">
+              <p className="mt-2 text-xs text-[#9a9184]">
                 Processed {displayedResults} of {totalResults} results
               </p>
             )}
-          </div>
+          </section>
         )}
 
-        {/* Error State */}
         {error && !isSearching && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+          <section className="mt-10 rounded-3xl border border-[#4a2f2a] bg-[#1a1311] p-6 text-sm text-[#f0b9ad]">
             {error}
-          </div>
+          </section>
         )}
 
-        {/* Results Grid */}
         {searchResults.length > 0 && !isSearching && (
-          <>
-            <div className="mb-4 text-sm text-gray-600">
-              Found {searchResults.length} public domain artworks with images
-              {displayedResults < totalResults && ` (searched ${displayedResults} of ${totalResults} total results)`}
+          <section className="mt-10">
+            <div className="mb-4 text-xs uppercase tracking-[0.3em] text-[#b9b1a4]">
+              Found {searchResults.length} works
+              {displayedResults < totalResults && ` (searched ${displayedResults} of ${totalResults})`}
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
               {searchResults.map((result) => (
                 <Link
                   key={result.objectID}
                   href={`/view/${result.objectID}`}
-                  className="bg-white rounded-lg shadow-md hover:shadow-xl transition-shadow overflow-hidden group"
+                  className="group rounded-3xl border border-[#2a2722] bg-[#141311] overflow-hidden transition hover:border-[#c8bfae]"
                 >
-                  <div className="relative aspect-square bg-gray-200">
+                  <div className="relative aspect-[4/5] bg-[#1a1815]">
                     <img
                       src={result.primaryImageSmall}
                       alt={result.title}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.02]"
                       loading="lazy"
                     />
                   </div>
-                  <div className="p-4">
-                    <h3 className="font-semibold text-gray-900 mb-1 line-clamp-2 group-hover:text-blue-600 transition-colors">
+                  <div className="p-5">
+                    <h3 className="text-lg font-serif text-[#f4efe6] leading-snug">
                       {result.title}
                     </h3>
-                    <p className="text-sm text-gray-600 mb-1">
-                      {result.artistDisplayName}
-                    </p>
-                    <p className="text-xs text-gray-500 mb-2">
-                      {result.objectDate}
-                    </p>
-                    <p className="text-xs text-gray-400">
-                      {result.department}
-                    </p>
-                    <div className="mt-3 text-xs text-blue-600 font-medium">
-                      View in 3D →
+                    <p className="mt-2 text-sm text-[#cfc6b7]">{result.artistDisplayName}</p>
+                    <div className="mt-3 flex items-center justify-between text-xs text-[#9a9184]">
+                      <span>{result.objectDate}</span>
+                      <span className="uppercase tracking-[0.2em]">{result.department}</span>
                     </div>
+                    <div className="mt-4 text-xs text-[#c8bfae]">View in 3D →</div>
                   </div>
                 </Link>
               ))}
             </div>
-          </>
+          </section>
         )}
 
-        {/* No Results Yet */}
         {!isSearching && searchResults.length === 0 && !error && (
-          <div className="text-center py-12 text-gray-500">
-            <svg
-              className="mx-auto h-12 w-12 text-gray-400 mb-4"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              aria-hidden="true"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-              />
-            </svg>
-            <p>Enter a search term to find artwork from the Met Museum</p>
-            <p className="text-sm mt-2">
-              Try searching for artists like &quot;Van Gogh&quot;, &quot;Monet&quot;, or keywords like &quot;landscape&quot;
+          <section className="mt-10 rounded-3xl border border-[#2a2722] bg-[#141311] p-10 text-center">
+            <p className="text-sm text-[#cfc6b7]">
+              Begin with an artist, medium, or era to reveal works suitable for relief translation.
             </p>
-          </div>
+            <p className="mt-2 text-xs text-[#9a9184]">
+              Try “Van Gogh”, “Impressionism”, or “landscape”.
+            </p>
+          </section>
         )}
       </div>
     </main>

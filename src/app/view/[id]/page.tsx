@@ -79,11 +79,11 @@ export default function ViewArtworkPage() {
 
   if (isLoading) {
     return (
-      <main className="min-h-screen p-8 bg-gradient-to-br from-gray-50 to-gray-100">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center py-20">
-            <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-            <p className="mt-4 text-gray-600">Loading artwork...</p>
+      <main className="min-h-screen bg-[#0f0f0d] text-[#e8e2d5]">
+        <div className="mx-auto max-w-6xl px-6 py-10 sm:px-8">
+          <div className="rounded-3xl border border-[#2a2722] bg-[#141311] p-12 text-center">
+            <div className="mx-auto h-10 w-10 animate-spin rounded-full border-2 border-[#c8bfae] border-t-transparent" />
+            <p className="mt-4 text-sm text-[#cfc6b7]">Loading artwork...</p>
           </div>
         </div>
       </main>
@@ -92,25 +92,24 @@ export default function ViewArtworkPage() {
 
   if (error || !artwork || !dimensions) {
     return (
-      <main className="min-h-screen p-8 bg-gradient-to-br from-gray-50 to-gray-100">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center py-20">
-            <div className="bg-red-50 border border-red-200 text-red-700 px-6 py-4 rounded-lg inline-block">
-              <p className="font-semibold mb-2">Error Loading Artwork</p>
-              <p>{error || 'Unknown error occurred'}</p>
-            </div>
-            <div className="mt-6 space-x-4">
+      <main className="min-h-screen bg-[#0f0f0d] text-[#e8e2d5]">
+        <div className="mx-auto max-w-6xl px-6 py-10 sm:px-8">
+          <div className="rounded-3xl border border-[#4a2f2a] bg-[#1a1311] p-10 text-center">
+            <p className="text-xs uppercase tracking-[0.3em] text-[#f0b9ad]">Archive Notice</p>
+            <p className="mt-3 text-lg font-serif text-[#f7e3dc]">Unable to load artwork</p>
+            <p className="mt-3 text-sm text-[#f0b9ad]">{error || 'Unknown error occurred'}</p>
+            <div className="mt-6 flex flex-wrap justify-center gap-3">
               <Link
                 href="/search"
-                className="inline-block px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                className="rounded-full border border-[#c8bfae] px-6 py-2 text-sm text-[#f4efe6] hover:bg-[#c8bfae] hover:text-[#0f0f0d] transition"
               >
-                Back to Search
+                Return to Search
               </Link>
               <Link
                 href="/"
-                className="inline-block px-6 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+                className="rounded-full border border-[#3b362f] px-6 py-2 text-sm text-[#cfc6b7] hover:border-[#c8bfae] hover:text-[#f4efe6] transition"
               >
-                Home
+                Landing
               </Link>
             </div>
           </div>
@@ -120,81 +119,71 @@ export default function ViewArtworkPage() {
   }
 
   return (
-    <main className="min-h-screen p-8 bg-gradient-to-br from-gray-50 to-gray-100">
-      <div className="max-w-6xl mx-auto">
-        {/* Navigation */}
-        <div className="mb-6">
-          <Link
-            href="/search"
-            className="text-blue-600 hover:text-blue-800 underline text-sm"
-          >
-            ← Back to Search
-          </Link>
-        </div>
-
-        {/* Artwork Info */}
-        <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            {artwork.title || 'Untitled'}
-          </h1>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-600">
-            <div>
-              <p className="mb-1">
-                <span className="font-semibold">Artist:</span>{' '}
-                {artwork.artistDisplayName || 'Unknown'}
-              </p>
-              <p className="mb-1">
-                <span className="font-semibold">Date:</span>{' '}
-                {artwork.objectDate || 'Unknown'}
-              </p>
-              <p className="mb-1">
-                <span className="font-semibold">Medium:</span>{' '}
-                {artwork.medium || 'Unknown'}
-              </p>
-            </div>
-            <div>
-              <p className="mb-1">
-                <span className="font-semibold">Department:</span>{' '}
-                {artwork.department || 'Unknown'}
-              </p>
-              <p className="mb-1">
-                <span className="font-semibold">Culture:</span>{' '}
-                {artwork.culture || 'Unknown'}
-              </p>
-              <p className="mb-1">
-                <span className="font-semibold">Dimensions:</span>{' '}
-                {artwork.dimensions || 'Not specified'}
-              </p>
-            </div>
+    <main className="min-h-screen bg-[#0f0f0d] text-[#e8e2d5]">
+      <div className="mx-auto max-w-6xl px-6 py-10 sm:px-8">
+        <header className="flex flex-wrap items-center justify-between gap-4 border-b border-[#2a2722] pb-6">
+          <div className="space-y-1">
+            <p className="text-xs uppercase tracking-[0.3em] text-[#b9b1a4]">Tree-D Studio</p>
+            <h1 className="text-2xl font-serif text-[#f4efe6]">Viewing Room</h1>
           </div>
-          {artwork.creditLine && (
-            <p className="mt-4 text-xs text-gray-500 italic">
-              {artwork.creditLine}
-            </p>
-          )}
-          <div className="mt-4">
+          <Link className="text-sm text-[#b9b1a4] hover:text-[#f4efe6] transition" href="/search">
+            ← Return to Search
+          </Link>
+        </header>
+
+        <section className="mt-10 rounded-3xl border border-[#2a2722] bg-[#141311] p-6">
+          <div className="flex flex-col gap-4">
+            <p className="text-xs uppercase tracking-[0.3em] text-[#b9b1a4]">Selected Work</p>
+            <h2 className="text-3xl font-serif text-[#f7f1e7]">{artwork.title || 'Untitled'}</h2>
+            <div className="grid gap-4 text-sm text-[#cfc6b7] md:grid-cols-2">
+              <div className="space-y-2">
+                <p>
+                  <span className="text-[#9a9184]">Artist</span> — {artwork.artistDisplayName || 'Unknown'}
+                </p>
+                <p>
+                  <span className="text-[#9a9184]">Date</span> — {artwork.objectDate || 'Unknown'}
+                </p>
+                <p>
+                  <span className="text-[#9a9184]">Medium</span> — {artwork.medium || 'Unknown'}
+                </p>
+              </div>
+              <div className="space-y-2">
+                <p>
+                  <span className="text-[#9a9184]">Department</span> — {artwork.department || 'Unknown'}
+                </p>
+                <p>
+                  <span className="text-[#9a9184]">Culture</span> — {artwork.culture || 'Unknown'}
+                </p>
+                <p>
+                  <span className="text-[#9a9184]">Dimensions</span> — {artwork.dimensions || 'Not specified'}
+                </p>
+              </div>
+            </div>
+            {artwork.creditLine && (
+              <p className="text-xs text-[#9a9184] italic">{artwork.creditLine}</p>
+            )}
             <a
               href={artwork.objectURL}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-blue-600 hover:text-blue-800 underline text-sm"
+              className="text-xs uppercase tracking-[0.3em] text-[#c8bfae] hover:text-[#f4efe6] transition"
             >
-              View on Met Museum Website →
+              View in Met Archive →
             </a>
           </div>
-        </div>
+        </section>
 
-        {/* 3D Viewer */}
-        <div className="bg-white rounded-lg shadow-lg p-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">
-            3D Model Viewer
-          </h2>
+        <section className="mt-10 rounded-3xl border border-[#2a2722] bg-[#141311] p-6">
+          <div className="mb-4 flex items-center justify-between">
+            <h3 className="text-xl font-serif text-[#f4efe6]">Relief Study</h3>
+            <p className="text-xs uppercase tracking-[0.3em] text-[#b9b1a4]">Studio Lighting Enabled</p>
+          </div>
           <PaintingProcessor
             imageUrl={artwork.primaryImage}
             dimensions={dimensions}
             title={artwork.title || 'Untitled'}
           />
-        </div>
+        </section>
       </div>
     </main>
   );

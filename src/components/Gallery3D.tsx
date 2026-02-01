@@ -124,13 +124,10 @@ export default function Gallery3D({ paintingIds }: Gallery3DProps) {
     controls.addEventListener('lock', () => setIsLocked(true));
     controls.addEventListener('unlock', () => setIsLocked(false));
 
-    // Gallery room
-    createGalleryRoom(scene);
-
-    // Studio lighting
+    // General studio lighting (ambient + directional)
     createStudioLighting(scene);
 
-    // Position paintings on walls
+    // Position paintings on walls (this also creates the room and dedicated spotlights)
     positionPaintings(scene, paintings);
 
     // Keyboard controls
@@ -243,9 +240,9 @@ export default function Gallery3D({ paintingIds }: Gallery3DProps) {
     };
   }, [paintings]);
 
-  const createGalleryRoom = (scene: THREE.Scene) => {
+  const createGalleryRoom = (scene: THREE.Scene, width: number, depth: number) => {
     // Floor
-    const floorGeometry = new THREE.PlaneGeometry(20, 20);
+    const floorGeometry = new THREE.PlaneGeometry(width, depth);
     const floorMaterial = new THREE.MeshStandardMaterial({
       color: 0x333333,
       roughness: 0.8,
@@ -265,36 +262,36 @@ export default function Gallery3D({ paintingIds }: Gallery3DProps) {
 
     // Back wall
     const backWall = new THREE.Mesh(
-      new THREE.PlaneGeometry(20, 5),
+      new THREE.PlaneGeometry(width, 5),
       wallMaterial
     );
-    backWall.position.set(0, 2.5, -10);
+    backWall.position.set(0, 2.5, -depth / 2);
     backWall.receiveShadow = true;
     scene.add(backWall);
 
     // Left wall
     const leftWall = new THREE.Mesh(
-      new THREE.PlaneGeometry(20, 5),
+      new THREE.PlaneGeometry(depth, 5),
       wallMaterial
     );
-    leftWall.position.set(-10, 2.5, 0);
+    leftWall.position.set(-width / 2, 2.5, 0);
     leftWall.rotation.y = Math.PI / 2;
     leftWall.receiveShadow = true;
     scene.add(leftWall);
 
     // Right wall
     const rightWall = new THREE.Mesh(
-      new THREE.PlaneGeometry(20, 5),
+      new THREE.PlaneGeometry(depth, 5),
       wallMaterial
     );
-    rightWall.position.set(10, 2.5, 0);
+    rightWall.position.set(width / 2, 2.5, 0);
     rightWall.rotation.y = -Math.PI / 2;
     rightWall.receiveShadow = true;
     scene.add(rightWall);
 
     // Ceiling
     const ceiling = new THREE.Mesh(
-      new THREE.PlaneGeometry(20, 20),
+      new THREE.PlaneGeometry(width, depth),
       new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 1.0 })
     );
     ceiling.position.y = 5;
@@ -304,61 +301,62 @@ export default function Gallery3D({ paintingIds }: Gallery3DProps) {
 
   const createStudioLighting = (scene: THREE.Scene) => {
     // Ambient light for overall illumination
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.3);
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.2);
     scene.add(ambientLight);
 
-    // Ceiling spotlights
-    const spotlightPositions = [
-      [-4, 4.5, -5],
-      [4, 4.5, -5],
-      [-4, 4.5, 5],
-      [4, 4.5, 5],
-      [0, 4.5, 0],
-    ];
-
-    spotlightPositions.forEach(pos => {
-      const spotlight = new THREE.SpotLight(0xffffff, 0.8);
-      spotlight.position.set(pos[0], pos[1], pos[2]);
-      spotlight.angle = Math.PI / 6;
-      spotlight.penumbra = 0.3;
-      spotlight.decay = 2;
-      spotlight.distance = 15;
-      spotlight.castShadow = true;
-      spotlight.shadow.mapSize.width = 1024;
-      spotlight.shadow.mapSize.height = 1024;
-      scene.add(spotlight);
-    });
-
-    // Directional light for shadows
-    const dirLight = new THREE.DirectionalLight(0xffffff, 0.5);
+    // Directional light for general shadows
+    const dirLight = new THREE.DirectionalLight(0xffffff, 0.3);
     dirLight.position.set(5, 8, 5);
     dirLight.castShadow = true;
-    dirLight.shadow.camera.left = -10;
-    dirLight.shadow.camera.right = 10;
-    dirLight.shadow.camera.top = 10;
-    dirLight.shadow.camera.bottom = -10;
+    dirLight.shadow.camera.left = -15;
+    dirLight.shadow.camera.right = 15;
+    dirLight.shadow.camera.top = 15;
+    dirLight.shadow.camera.bottom = -15;
     scene.add(dirLight);
   };
 
   const positionPaintings = async (scene: THREE.Scene, paintingsData: PaintingData[]) => {
     const textureLoader = new THREE.TextureLoader();
     
-    // Calculate wall positions
+    // Calculate optimal gallery size and layout
+    const paintingSpacing = 2; // Space between paintings
+    const wallMargin = 1.5; // Space from edges
+    const paintingsPerWall = Math.ceil(paintingsData.length / 3);
+    
+    // Determine which walls to use
+    let wallsToUse = 1; // Start with back wall only
+    if (paintingsData.length > 6) {
+      wallsToUse = 3; // Use all three walls
+    } else if (paintingsData.length > 3) {
+      wallsToUse = 2; // Use back wall and one side wall
+    }
+    
+    // Calculate gallery dimensions based on paintings
+    const avgWidth = paintingsData.reduce((sum, p) => sum + p.dimensions.width, 0) / paintingsData.length;
+    const galleryWidth = Math.max(12, (avgWidth + paintingSpacing) * Math.min(paintingsData.length, paintingsPerWall) + wallMargin * 2);
+    const galleryDepth = wallsToUse === 1 ? 8 : (wallsToUse === 2 ? 12 : 16);
+    
+    // Create gallery room with calculated dimensions
+    createGalleryRoom(scene, galleryWidth, galleryDepth);
+    
+    // Calculate wall positions based on gallery size
     const wallConfigs = [
-      { position: new THREE.Vector3(0, 1.6, -9.9), rotation: 0 }, // Back wall
-      { position: new THREE.Vector3(-9.9, 1.6, 0), rotation: Math.PI / 2 }, // Left wall
-      { position: new THREE.Vector3(9.9, 1.6, 0), rotation: -Math.PI / 2 }, // Right wall
-    ];
+      { position: new THREE.Vector3(0, 1.6, -galleryDepth / 2 + 0.1), rotation: 0 }, // Back wall
+      { position: new THREE.Vector3(-galleryWidth / 2 + 0.1, 1.6, 0), rotation: Math.PI / 2 }, // Left wall
+      { position: new THREE.Vector3(galleryWidth / 2 - 0.1, 1.6, 0), rotation: -Math.PI / 2 }, // Right wall
+    ].slice(0, wallsToUse);
 
     for (let index = 0; index < paintingsData.length; index++) {
       const painting = paintingsData[index];
-      const wallIndex = index % wallConfigs.length;
+      const wallIndex = index % wallsToUse;
       const wallConfig = wallConfigs[wallIndex];
-      const paintingsOnWall = Math.floor(index / wallConfigs.length);
+      const paintingsOnThisWall = Math.floor(index / wallsToUse);
+      const totalOnWall = Math.ceil(paintingsData.length / wallsToUse);
       
-      // Spacing along the wall
-      const spacing = 3;
-      const offset = (paintingsOnWall - Math.floor(paintingsData.length / wallConfigs.length / 2)) * spacing;
+      // Calculate offset to center paintings on wall
+      const totalWidth = (totalOnWall - 1) * paintingSpacing;
+      const startOffset = -totalWidth / 2;
+      const offset = startOffset + paintingsOnThisWall * paintingSpacing;
 
       const proxyUrl = `/api/proxy-image?url=${encodeURIComponent(painting.imageUrl)}`;
       
@@ -440,6 +438,23 @@ export default function Gallery3D({ paintingIds }: Gallery3DProps) {
         
         scene.add(paintingMesh);
         paintingMeshesRef.current.set(painting.id, paintingMesh);
+        
+        // Add dedicated spotlight above this painting (museum-style)
+        const spotlight = new THREE.SpotLight(0xfff5e6, 1.2); // Warm white light
+        const lightOffset = new THREE.Vector3(0, 0, 0.5); // Offset light forward from wall
+        lightOffset.applyAxisAngle(new THREE.Vector3(0, 1, 0), wallConfig.rotation);
+        spotlight.position.copy(position).add(new THREE.Vector3(0, 1.5, 0)).add(lightOffset);
+        spotlight.target.position.copy(position);
+        spotlight.angle = Math.PI / 8; // Narrow beam focused on painting
+        spotlight.penumbra = 0.4; // Soft edges
+        spotlight.decay = 2;
+        spotlight.distance = 5;
+        spotlight.castShadow = true;
+        spotlight.shadow.mapSize.width = 1024;
+        spotlight.shadow.mapSize.height = 1024;
+        spotlight.shadow.bias = -0.001;
+        scene.add(spotlight);
+        scene.add(spotlight.target);
       } catch (error) {
         console.error(`Failed to load texture for painting ${painting.id}:`, error);
       }
@@ -465,6 +480,8 @@ export default function Gallery3D({ paintingIds }: Gallery3DProps) {
       map: texture,
       roughness: 0.5,
       metalness: 0.0,
+      emissive: 0xffffff,
+      emissiveIntensity: 0.01,
       normalMap: normalMap || undefined,
       normalScale: normalMap ? new THREE.Vector2(2.0, 2.0) : undefined,
       displacementMap: displacementMap || undefined,
@@ -474,7 +491,8 @@ export default function Gallery3D({ paintingIds }: Gallery3DProps) {
     });
     
     const canvas = new THREE.Mesh(canvasGeometry, canvasMaterial);
-    canvas.castShadow = true;
+    canvas.position.z = -0.02
+    canvas.castShadow = false;
     canvas.receiveShadow = true;
     group.add(canvas);
 
@@ -495,7 +513,7 @@ export default function Gallery3D({ paintingIds }: Gallery3DProps) {
       frameMaterial
     );
     topFrame.position.set(0, height / 2 + frameThickness / 2, -frameDepth / 2);
-    topFrame.castShadow = true;
+    topFrame.castShadow = false;
     group.add(topFrame);
 
     // Bottom frame
@@ -504,7 +522,7 @@ export default function Gallery3D({ paintingIds }: Gallery3DProps) {
       frameMaterial
     );
     bottomFrame.position.set(0, -height / 2 - frameThickness / 2, -frameDepth / 2);
-    bottomFrame.castShadow = true;
+    bottomFrame.castShadow = false;
     group.add(bottomFrame);
 
     // Left frame
@@ -513,7 +531,7 @@ export default function Gallery3D({ paintingIds }: Gallery3DProps) {
       frameMaterial
     );
     leftFrame.position.set(-width / 2 - frameThickness / 2, 0, -frameDepth / 2);
-    leftFrame.castShadow = true;
+    leftFrame.castShadow = false;
     group.add(leftFrame);
 
     // Right frame
@@ -522,7 +540,7 @@ export default function Gallery3D({ paintingIds }: Gallery3DProps) {
       frameMaterial
     );
     rightFrame.position.set(width / 2 + frameThickness / 2, 0, -frameDepth / 2);
-    rightFrame.castShadow = true;
+    rightFrame.castShadow = false;
     group.add(rightFrame);
 
     return group as any;

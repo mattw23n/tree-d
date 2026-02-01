@@ -649,7 +649,7 @@ export default function PaintingRenderer({
   }, [showFrame]);
 
   return (
-    <div className="relative w-full h-[600px] overflow-hidden rounded-2xl border border-[#2a2722] bg-[#0f0f0d]">
+    <div className="relative mx-auto w-full max-w-3xl h-[420px] sm:h-[520px] lg:h-[600px] overflow-hidden rounded-2xl border border-[#2a2722] bg-[#0f0f0d]">
       {(isLoading || isEnhancing) && (
         <div className="absolute inset-0 flex items-center justify-center z-10 bg-[#0f0f0d]/90">
           <div className="flex flex-col items-center gap-3 text-[#cfc6b7]">

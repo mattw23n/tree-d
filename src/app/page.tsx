@@ -113,6 +113,39 @@ export default function HomePage() {
           </div>
         </section>
 
+        <section className="mt-16 rounded-3xl border border-[#2a2722] bg-[#141311] p-8">
+          <div className="grid gap-8 lg:grid-cols-[1.1fr_0.9fr]">
+            <div className="space-y-4">
+              <p className="text-xs uppercase tracking-[0.3em] text-[#b9b1a4]">AR Placement</p>
+              <h3 className="text-2xl font-serif text-[#f4efe6]">View the relief in your room (iPhone)</h3>
+              <ol className="space-y-3 text-sm text-[#cfc6b7]">
+                <li className="flex gap-3">
+                  <span className="mt-1 h-2 w-2 rounded-full bg-[#c8bfae]" />
+                  Find a painting from the archive and export the USDZ file.
+                </li>
+                <li className="flex gap-3">
+                  <span className="mt-1 h-2 w-2 rounded-full bg-[#c8bfae]" />
+                  Download the USDZ to your iPhone (Files app).
+                </li>
+                <li className="flex gap-3">
+                  <span className="mt-1 h-2 w-2 rounded-full bg-[#c8bfae]" />
+                  Tap the file to open Quick Look, then place the painting using AR.
+                </li>
+              </ol>
+              <p className="text-xs text-[#9a9184]">
+                The AR result should resemble the sample below (Thank you Verdio Wong =D).
+              </p>
+            </div>
+            <div className="rounded-2xl border border-[#2a2722] bg-[#0f0f0d] p-3">
+              <img
+                src="/test_pic.jpg"
+                alt="Painting placed in room using AR"
+                className="h-full w-full rounded-xl object-cover"
+              />
+            </div>
+          </div>
+        </section>
+
         <footer className="mt-16 border-t border-[#2a2722] pt-6 text-xs text-[#b9b1a4]">
           A museum‑toned studio for turning paintings into spatial artifacts.
         </footer>

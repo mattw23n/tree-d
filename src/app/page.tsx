@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { fetchMetArtwork, MetArtwork } from '@/lib/metApi';
 import { parseDimensions, getDefaultDimensions, ParsedDimensions } from '@/utils/dimensionParser';
 import PaintingProcessor from '@/components/PaintingProcessor';
@@ -76,6 +77,14 @@ export default function Home() {
           <p className="text-sm text-gray-500">
             Solving the &quot;Scalar Gap&quot; — bridging the sensory gap between digital images and physical presence
           </p>
+          <div className="mt-4">
+            <Link 
+              href="/search"
+              className="inline-block px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+            >
+              Search Met Museum Collection →
+            </Link>
+          </div>
         </div>
 
         <div className="bg-white rounded-lg shadow-lg p-6 mb-6">

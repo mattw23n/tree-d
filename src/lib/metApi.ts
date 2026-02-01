@@ -66,6 +66,7 @@ export interface MetArtwork {
   }>;
   objectWikidata_URL: string;
   isTimelineWork: boolean;
+  isPublicDomain: boolean;
   GalleryNumber: string;
 }
 
@@ -102,6 +103,43 @@ export async function fetchMetArtwork(objectId: number): Promise<MetArtwork | nu
     return data as MetArtwork;
   } catch (error) {
     console.error('Error fetching Met artwork:', error);
+    throw error;
+  }
+}
+
+/**
+ * Search for artworks in the Met Museum collection
+ * @param query - Search query string
+ * @returns Promise with array of object IDs or empty array if no results
+ */
+export async function searchMetArtwork(query: string): Promise<number[]> {
+  try {
+    const response = await fetch(
+      `https://collectionapi.metmuseum.org/public/collection/v1/search?hasImages=true&isPublicDomain=true&q=${encodeURIComponent(query)}`,
+      {
+        headers: {
+          'Accept': 'application/json',
+        },
+      }
+    );
+
+    if (!response.ok) {
+      if (response.status === 404) {
+        return [];
+      }
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    
+    // The API returns { total: number, objectIDs: number[] | null }
+    if (!data.objectIDs || data.objectIDs.length === 0) {
+      return [];
+    }
+
+    return data.objectIDs;
+  } catch (error) {
+    console.error('Error searching Met artworks:', error);
     throw error;
   }
 }

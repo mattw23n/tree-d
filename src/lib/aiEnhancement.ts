@@ -11,13 +11,17 @@ export interface AIEnhancementOptions {
 }
 
 /**
- * Generate normal map using Hugging Face Depth Anything V2 or Marigold Normals
- * Fast AI-based normal map generation (213ms latency)
- * Uses Next.js API route to keep API key server-side
+ * Generate normal map using an AI model
+ *
+ * NOTE:
+ * - This implementation now calls a local Marigold normals server
+ *   running at http://127.0.0.1:8000/marigold-normals
+ * - If the server is unavailable, we throw a special fallback error
+ *   so the caller can gracefully switch to the procedural method.
  */
 export async function generateAINormalMap(
   imageUrl: string,
-  model: 'depth-anything-v2' | 'marigold-normals' | 'depthpro' = 'depthpro' // Default to DepthPro (best quality)
+  model: 'depth-anything-v2' | 'marigold-normals' | 'depthpro' = 'marigold-normals'
 ): Promise<string> {
   if (imageUrl.startsWith('blob:') || imageUrl.startsWith('data:')) {
     const fallbackError = new Error('AI_NORMAL_MAP_UNAVAILABLE');
@@ -25,38 +29,34 @@ export async function generateAINormalMap(
     throw fallbackError;
   }
   try {
-    // Use Next.js API route to handle Hugging Face API (keeps API key server-side)
-    const response = await fetch('/api/ai-normal-map', {
+    // Call local Marigold normals server
+    const response = await fetch('http://127.0.0.1:8000/marigold-normals', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        imageUrl,
-        model,
+        image_url: imageUrl,
+        num_inference_steps: 10,
       }),
     });
 
     if (!response.ok) {
-      const error = await response.json().catch(() => ({ fallback: true }));
       const fallbackError = new Error('AI_NORMAL_MAP_UNAVAILABLE');
       (fallbackError as any).isFallback = true;
-      if (error?.fallback || error?.error?.includes('API key')) {
-        throw fallbackError;
-      }
       throw fallbackError;
     }
 
     const result = await response.json();
-    
-    // Check if result indicates fallback needed
-    if (result.fallback || !result.normalMapUrl) {
+
+    // Local server returns a data URL for the normal map
+    if (!result.normal_map_base64) {
       const fallbackError = new Error('AI_NORMAL_MAP_UNAVAILABLE');
       (fallbackError as any).isFallback = true; // Mark as expected fallback
       throw fallbackError;
     }
-    
-    return result.normalMapUrl;
+
+    return result.normal_map_base64 as string;
   } catch (error) {
     if (error instanceof Error && (error as any).isFallback) {
       throw error;

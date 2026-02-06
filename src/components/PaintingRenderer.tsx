@@ -23,11 +23,20 @@ interface SceneTargets {
   mesh: THREE.Mesh | null;
 }
 
+interface ProcessingStage {
+  id: string;
+  step: number;
+  title: string;
+  description: string;
+  imageUrl: string;
+}
+
 interface PaintingRendererProps {
   imageUrl: string;
   dimensions: ParsedDimensions;
   isDarkMode: boolean;
   showFrame: boolean;
+  showScaleReference: boolean;
   isEnhancing: boolean;
   isLoading: boolean;
   error: string | null;
@@ -36,6 +45,7 @@ interface PaintingRendererProps {
   onError: (error: string | null) => void;
   onEnhancementStatusChange: (status: EnhancementStatus) => void;
   onEnhancingChange: (isEnhancing: boolean) => void;
+  onProcessingStagesChange: (stages: ProcessingStage[]) => void;
 }
 
 export default function PaintingRenderer({
@@ -43,6 +53,7 @@ export default function PaintingRenderer({
   dimensions,
   isDarkMode,
   showFrame,
+  showScaleReference,
   isEnhancing,
   isLoading,
   error,
@@ -51,6 +62,7 @@ export default function PaintingRenderer({
   onError,
   onEnhancementStatusChange,
   onEnhancingChange,
+  onProcessingStagesChange,
 }: PaintingRendererProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const sceneRef = useRef<THREE.Scene | null>(null);
@@ -60,6 +72,7 @@ export default function PaintingRenderer({
   const meshRef = useRef<THREE.Mesh | null>(null);
   const paintingGroupRef = useRef<THREE.Group | null>(null);
   const frameElementsRef = useRef<THREE.Mesh[]>([]);
+  const scaleReferenceGroupRef = useRef<THREE.Group | null>(null);
   const pointLightRef = useRef<THREE.PointLight | null>(null);
   const enhancementInFlightRef = useRef(false);
   const enhancementRunForImageRef = useRef<string | null>(null);
@@ -86,13 +99,26 @@ export default function PaintingRenderer({
       const proxyUrl = imageUrl.startsWith('blob:') || imageUrl.startsWith('data:')
         ? imageUrl
         : `/api/proxy-image?url=${encodeURIComponent(imageUrl)}`;
+
+      const stages: ProcessingStage[] = [
+        {
+          id: 'original',
+          step: 1,
+          title: 'Original painting',
+          description: 'The 2D artwork as provided to Tree‑D Studio.',
+          imageUrl: proxyUrl,
+        },
+      ];
+      onProcessingStagesChange(stages);
+
       const textureLoader = new THREE.TextureLoader();
 
       let normalMapUrl: string;
       let useAI = false;
 
       try {
-        normalMapUrl = await generateAINormalMap(imageUrl, 'marigold-normals');
+        // Try a simpler, widely-available depth model first (Depth Anything V2 Small via Hugging Face)
+        normalMapUrl = await generateAINormalMap(imageUrl, 'depth-anything-v2');
         useAI = true;
       } catch (aiError) {
         const errorMessage = aiError instanceof Error ? aiError.message : String(aiError);
@@ -107,6 +133,17 @@ export default function PaintingRenderer({
 
         normalMapUrl = await generateCanvasNormalMap(proxyUrl, 0.04, 0.2, 4, 2);
       }
+
+      stages.push({
+        id: 'normal',
+        step: 2,
+        title: useAI ? 'AI depth / normal prediction' : 'Procedural normal map',
+        description: useAI
+          ? 'A depth model predicts which parts of the image are closer or farther and encodes that as RGB normals.'
+          : 'A procedural normal map simulates canvas weave and brush strokes without calling an AI service.',
+        imageUrl: normalMapUrl,
+      });
+      onProcessingStagesChange([...stages]);
 
       textureLoader.load(
         normalMapUrl,
@@ -146,6 +183,15 @@ export default function PaintingRenderer({
             meshRef.current.material.needsUpdate = true;
           }
         });
+
+        stages.push({
+          id: 'roughness',
+          step: 3,
+          title: 'Roughness map',
+          description: 'Bright and dark regions control how glossy or matte each point of the surface appears.',
+          imageUrl: roughnessUrl,
+        });
+        onProcessingStagesChange([...stages]);
       });
 
       generateDisplacementMap(proxyUrl, 0.01, 0.5, 2, 1.5)
@@ -174,6 +220,15 @@ export default function PaintingRenderer({
               message: '3D impasto relief applied! Rotate to see depth from the side.',
             });
           });
+
+          stages.push({
+            id: 'displacement',
+            step: 4,
+            title: 'Displacement (height) map',
+            description: 'This grayscale map pushes vertices forward and backward to form the 3D relief.',
+            imageUrl: displacementUrl,
+          });
+          onProcessingStagesChange([...stages]);
         })
         .catch((error) => {
           console.error('Failed to generate displacement map:', error);
@@ -238,7 +293,7 @@ export default function PaintingRenderer({
     } finally {
       enhancementInFlightRef.current = false;
     }
-  }, [imageUrl, onEnhancingChange, onEnhancementStatusChange, onError]);
+  }, [imageUrl, onEnhancingChange, onEnhancementStatusChange, onError, onProcessingStagesChange]);
 
   useEffect(() => {
     enhancementRunForImageRef.current = null;
@@ -437,6 +492,54 @@ export default function PaintingRenderer({
       if (includeFrame) {
         frameElements.forEach(element => paintingGroup.add(element));
       }
+
+      // Human scale reference figure (approx. 1.8m tall person)
+      const humanHeightUnits = 1.8; // 180cm / 100
+      const humanGroup = new THREE.Group();
+
+      const legHeight = humanHeightUnits * 0.45;
+      const torsoHeight = humanHeightUnits * 0.35;
+      const headHeight = humanHeightUnits * 0.2;
+      const bodyWidth = humanHeightUnits * 0.18;
+      const depth = frameDepth * 0.6;
+
+      const material = new THREE.MeshStandardMaterial({
+        color: 0x555577,
+        roughness: 0.5,
+        metalness: 0.1,
+      });
+
+      const leftLeg = new THREE.Mesh(
+        new THREE.BoxGeometry(bodyWidth * 0.5, legHeight, depth),
+        material
+      );
+      const rightLeg = leftLeg.clone();
+      leftLeg.position.set(-bodyWidth * 0.15, legHeight / 2, 0);
+      rightLeg.position.set(bodyWidth * 0.15, legHeight / 2, 0);
+
+      const torso = new THREE.Mesh(
+        new THREE.BoxGeometry(bodyWidth, torsoHeight, depth * 1.1),
+        material
+      );
+      torso.position.set(0, legHeight + torsoHeight / 2, 0);
+
+      const head = new THREE.Mesh(
+        new THREE.BoxGeometry(bodyWidth * 0.7, headHeight, depth),
+        material
+      );
+      head.position.set(0, legHeight + torsoHeight + headHeight / 2, 0);
+
+      humanGroup.add(leftLeg, rightLeg, torso, head);
+
+      // Position human so feet are roughly aligned with painting bottom
+      const humanOffsetX = width / 2 + bodyWidth;
+      const humanOffsetY = -height / 2;
+      const humanOffsetZ = frameZOffset;
+      humanGroup.position.set(humanOffsetX, humanOffsetY, humanOffsetZ);
+
+      humanGroup.visible = showScaleReference;
+      paintingGroup.add(humanGroup);
+      scaleReferenceGroupRef.current = humanGroup;
 
       return { canvasMesh, paintingGroup, frameElements };
     };
@@ -651,6 +754,11 @@ export default function PaintingRenderer({
       frameElement.visible = showFrame;
     });
   }, [showFrame]);
+
+  useEffect(() => {
+    if (!scaleReferenceGroupRef.current) return;
+    scaleReferenceGroupRef.current.visible = showScaleReference;
+  }, [showScaleReference]);
 
   return (
     <div className="relative mx-auto w-full max-w-3xl h-[420px] sm:h-[520px] lg:h-[600px] overflow-hidden rounded-2xl border border-[#2a2722] bg-[#0f0f0d]">

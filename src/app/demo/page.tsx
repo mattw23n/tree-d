@@ -256,7 +256,7 @@ export default function Home() {
                 <p className="text-xs uppercase tracking-[0.3em] text-[#b9b1a4]">Physical dimensions (cm)</p>
                 <div className="grid gap-3 sm:grid-cols-3">
                   <div>
-                    <label className="text-xs text-[#9a9184]">Width</label>
+                    <label className="text-xs text-[#9a9184]">Height</label>
                     <input
                       value={uploadWidthCm}
                       onChange={(e) => setUploadWidthCm(e.target.value)}
@@ -264,7 +264,7 @@ export default function Home() {
                     />
                   </div>
                   <div>
-                    <label className="text-xs text-[#9a9184]">Height</label>
+                    <label className="text-xs text-[#9a9184]">Width</label>
                     <input
                       value={uploadHeightCm}
                       onChange={(e) => setUploadHeightCm(e.target.value)}

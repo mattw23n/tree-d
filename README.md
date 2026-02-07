@@ -1,6 +1,6 @@
 # Tree-D Studio: AI-Enhanced 2D to 3D Painting Reliefs
 
-![Headline](frontend\public\headline.png)
+![Headline](frontend/public/headline.png)
 
 ## Live Demo
 

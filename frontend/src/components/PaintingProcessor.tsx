@@ -15,6 +15,14 @@ interface EnhancementStatus {
   message?: string;
 }
 
+interface ProcessingStage {
+  id: string;
+  step: number;
+  title: string;
+  description: string;
+  imageUrl: string;
+}
+
 interface PaintingProcessorProps {
   imageUrl: string;
   dimensions: ParsedDimensions;
@@ -35,10 +43,12 @@ export default function PaintingProcessor({
   const [isDarkMode, setIsDarkMode] = useState(true);
   const [isEnhancing, setIsEnhancing] = useState(false);
   const [showFrame, setShowFrame] = useState(true);
+  const [showScaleReference, setShowScaleReference] = useState(false);
   const [enhancementStatus, setEnhancementStatus] = useState<EnhancementStatus>({
     normalMap: false,
     aiEnhanced: false,
   });
+  const [processingStages, setProcessingStages] = useState<ProcessingStage[]>([]);
 
   const handleSceneTargetsChange = useCallback((targets: { scene: THREE.Scene | null; mesh: THREE.Mesh | null }) => {
     sceneRef.current = targets.scene;
@@ -251,6 +261,7 @@ export default function PaintingProcessor({
         dimensions={dimensions}
         isDarkMode={isDarkMode}
         showFrame={showFrame}
+        showScaleReference={showScaleReference}
         isEnhancing={isEnhancing}
         isLoading={isLoading}
         error={error}
@@ -259,6 +270,7 @@ export default function PaintingProcessor({
         onError={setError}
         onEnhancementStatusChange={setEnhancementStatus}
         onEnhancingChange={setIsEnhancing}
+        onProcessingStagesChange={setProcessingStages}
       />
       <div className="mt-4 flex flex-col gap-4">
         <PaintingExportControls
@@ -271,19 +283,56 @@ export default function PaintingProcessor({
         <PaintingControls
           isDarkMode={isDarkMode}
           showFrame={showFrame}
+          showScaleReference={showScaleReference}
           isEnhancing={isEnhancing}
           onToggleDarkMode={() => setIsDarkMode((prev) => !prev)}
           onToggleFrame={() => setShowFrame((prev) => !prev)}
+          onToggleScaleReference={() => setShowScaleReference((prev) => !prev)}
         />
         <div className="text-sm text-gray-600">
-          Dimensions: {dimensions.width.toFixed(3)} × {dimensions.height.toFixed(3)} units
+          Scene size: {dimensions.width.toFixed(3)} × {dimensions.height.toFixed(3)} units
           {dimensions.depth && ` × ${dimensions.depth.toFixed(4)} units`}
           <br />
-          <span className="text-xs">({dimensions.originalString})</span>
+          Real size (100 cm = 1 unit): {(dimensions.width * 100).toFixed(1)} ×{' '}
+          {(dimensions.height * 100).toFixed(1)} cm
+          {dimensions.depth && ` × ${(dimensions.depth * 100).toFixed(2)} cm`}
+          <br />
+          <span className="text-xs text-gray-500">
+            Source dimensions: {dimensions.originalString}
+          </span>
         </div>
         {enhancementStatus.message && (
           <div className="text-sm text-gray-600">
             {enhancementStatus.message}
+          </div>
+        )}
+        {processingStages.length > 0 && (
+          <div className="mt-4">
+            <div className="text-xs uppercase tracking-[0.25em] text-gray-500 mb-2">
+              How this 3D relief is generated
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-2">
+              {processingStages.map((stage) => (
+                <div
+                  key={stage.id}
+                  className="rounded-xl border border-[#2a2722] bg-[#12100d] p-3"
+                >
+                  <div className="relative w-full pt-[75%] overflow-hidden rounded-lg border border-[#2a2722] bg-black/40">
+                    <img
+                      src={stage.imageUrl}
+                      alt={stage.title}
+                      className="absolute inset-0 h-full w-full object-cover"
+                    />
+                  </div>
+                  <div className="mt-2 text-xs font-semibold text-[#f4efe6]">
+                    Step {stage.step}: {stage.title}
+                  </div>
+                  <p className="mt-1 text-[11px] leading-snug text-gray-400">
+                    {stage.description}
+                  </p>
+                </div>
+              ))}
+            </div>
           </div>
         )}
       </div>

@@ -71,3 +71,11 @@ GPU notes
 - For GPU usage ensure `torch` is installed with the appropriate CUDA support for your GPU and drivers.
 - On CUDA the code moves the pipeline to `pipe.device` and uses `torch.Generator(device=pipe.device)`
 	when a `seed` is provided.
+
+## Built For
+
+PINUS Hack 2026
+
+## License
+
+MIT

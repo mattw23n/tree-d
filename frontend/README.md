@@ -1,54 +1,4 @@
-# Tree-D Studio
-
-A web application that converts 2D paintings into depth-aware 3D reliefs using AI-enhanced normals, displacement, and roughness. It supports the Met Museum API, interactive 3D viewing, and USDZ/GLTF export for AR placement.
-
-## Problem Statement
-
-The "Scalar Gap" refers to the challenge collectors face when viewing artwork online: they cannot accurately judge the physical size and presence of paintings. This tool bridges the sensory gap between digital images and physical presence by providing accurate, real-world scaled 3D models.
-
-## Features
-
-- **Landing, Search, View, Demo pages** with a museum-style interface
-- **Met Museum API Integration** for curated public-domain artworks
-- **Custom image uploads** with local-only processing
-- **AI Normal Map Generation** (Marigold) with procedural fallbacks
-- **Displacement & Roughness Maps** for tactile relief and material response
-- **Accurate 3D Scaling**: 100cm in real life = 1 unit in Three.js
-- **GLTF + USDZ Export** for AR/VR previewing
-
-## Tech Stack
-
-- **Next.js 14** (App Router)
-- **TypeScript**
-- **Three.js** (3D rendering)
-- **Tailwind CSS** (styling)
-- **GLTFExporter** (3D model export)
-
-## Getting Started
-
-### Prerequisites
-
-- Node.js 18+ and npm
-
-### Installation
-
-1. Clone the repository:
-```bash
-git clone <your-repo-url>
-cd tree-d
-```
-
-2. Install dependencies:
-```bash
-npm install
-```
-
-3. Run the development server:
-```bash
-npm run dev
-```
-
-4. Open [http://localhost:3000](http://localhost:3000) in your browser
+# Tree-D Studio Frontendd
 
 ## Usage
 
@@ -121,7 +71,7 @@ This tool provides "Decision Support" for collectors by allowing them to:
 
 ## Built For
 
-PINUS Hack 2026 Track 4
+PINUS Hack 2026
 
 ## License
 

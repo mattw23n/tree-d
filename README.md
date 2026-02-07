@@ -121,7 +121,7 @@ This tool provides "Decision Support" for collectors by allowing them to:
 
 ## Built For
 
-PINUS Hack 2026 Track 4
+PINUS Hack 2026 Track 4 :)
 
 ## License
 

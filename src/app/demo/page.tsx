@@ -118,8 +118,10 @@ export default function Home() {
           </div>
           <nav className="hidden gap-6 text-sm text-[#b9b1a4] sm:flex">
             <a className="hover:text-[#f4efe6] transition" href="/search">Search</a>
-            <a className="hover:text-[#f4efe6] transition" href="/demo">Demo</a>
-            <span className="text-[#6f675b]">View</span>
+            <a className="hover:text-[#f4efe6] transition" href="/">Landing</a>
+            <a href='https://github.com/mattw23n/tree-d' target='_blank'>
+              <img height={20} width={20} src={"https://cdn.simpleicons.org/github/f4efe6"}/>
+            </a>
           </nav>
         </header>
 

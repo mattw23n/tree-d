@@ -103,8 +103,11 @@ export default function SearchPage() {
             <h1 className="text-2xl font-serif text-[#f4efe6]">Curatorial Search</h1>
           </div>
           <nav className="flex gap-6 text-sm text-[#b9b1a4]">
-            <Link className="hover:text-[#f4efe6] transition" href="/">Landing</Link>
-            <Link className="hover:text-[#f4efe6] transition" href="/demo">Demo</Link>
+            <a className="hover:text-[#f4efe6] transition" href="/">Landing</a>
+            <a className="hover:text-[#f4efe6] transition" href="/demo">Demo</a>
+            <a href='https://github.com/mattw23n/tree-d' target='_blank'>
+              <img height={20} width={20} src={"https://cdn.simpleicons.org/github/f4efe6"}/>
+            </a>
           </nav>
         </header>
 
